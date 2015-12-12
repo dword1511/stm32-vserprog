@@ -73,7 +73,7 @@ $(LDPATH)$(LIBOPENCM3):
 .PHONY: clean distclean flash size
 
 clean:
-	rm -f $(OBJS) $(DOCS) $(ELF) $(HEX) $(BIN) $(MAP)
+	rm -f $(OBJS) $(DOCS) $(ELF) $(HEX) $(BIN) $(MAP) $(DMP)
 
 distclean: clean
 	make -C libopencm3 clean

@@ -49,6 +49,7 @@ void handle_command(unsigned char command) {
     }
 
     case S_CMD_Q_IFACE: {
+      // TODO: use usbcdc_write for better efficiency
       usbcdc_putc(S_ACK);
 
       /* little endian multibyte value to complete to 16bit */
@@ -59,6 +60,7 @@ void handle_command(unsigned char command) {
     }
 
     case S_CMD_Q_CMDMAP: {
+      // TODO: use usbcdc_write for better efficiency
       usbcdc_putc(S_ACK);
 
       /* little endian */
@@ -72,6 +74,7 @@ void handle_command(unsigned char command) {
     }
 
     case S_CMD_Q_PGMNAME: {
+      // TODO: use usbcdc_write for better efficiency
       usbcdc_putc(S_ACK);
 
       l = 0;
@@ -88,6 +91,7 @@ void handle_command(unsigned char command) {
     }
 
     case S_CMD_Q_SERBUF: {
+      // TODO: use usbcdc_write for better efficiency
       usbcdc_putc(S_ACK);
 
       /* Pretend to be 64K (0xffff) */
@@ -98,6 +102,7 @@ void handle_command(unsigned char command) {
     }
 
     case S_CMD_Q_BUSTYPE: {
+      // TODO: use usbcdc_write for better efficiency
       // TODO: LPC / FWH IO support via PP-Mode
       usbcdc_putc(S_ACK);
       usbcdc_putc(S_SUPPORTED_BUS);
@@ -151,6 +156,7 @@ void handle_command(unsigned char command) {
     }
 
     case S_CMD_SYNCNOP: {
+      // TODO: use usbcdc_write for better efficiency
       usbcdc_putc(S_NAK);
       usbcdc_putc(S_ACK);
 
@@ -186,7 +192,7 @@ void handle_command(unsigned char command) {
       }
       usbcdc_putc(S_ACK); // TODO: S_ACK early for better performance (so while DMA is working, programmer can receive next command)?
       if(rlen) {
-        spi_bulk_read(rlen);
+        spi_bulk_read(rlen); // TODO: buffer?
       }
 
       SPI_UNSELECT();

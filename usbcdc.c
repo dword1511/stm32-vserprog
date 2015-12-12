@@ -223,18 +223,23 @@ void usbcdc_init(void) {
 }
 
 /* Application-level functions */
-uint16_t usbcdc_write(char* buf, size_t len) {
-  return usbd_ep_write_packet(usbd_dev, EP_OUT, buf, len);
+uint16_t usbcdc_write(void *buf, size_t len) {
+  uint16_t ret;
+
+  /* Blocking write */
+  while (0 == (ret = usbd_ep_write_packet(usbd_dev, EP_OUT, buf, len)));
+  return ret;
 }
 
 uint16_t usbcdc_putc(char c) {
-  return usbd_ep_write_packet(usbd_dev, EP_OUT, &c, 1);
+  return usbcdc_write(&c, sizeof(c));
 }
 
 uint16_t usbcdc_putu32(uint32_t word) {
-  uint32_t l = __builtin_bswap32(word);
-
-  return usbd_ep_write_packet(usbd_dev, EP_OUT, &l, 4);
+  //uint32_t l = __builtin_bswap32(word);
+  //return usbcdc_write(&l, sizeof(word));
+  /* We are using little endian, so no bit swap. */
+  return usbcdc_write(&word, sizeof(word));
 }
 
 /* We need to maintain a RX user buffer since libopencm3 will throw rest of the package away. */
