@@ -4,6 +4,7 @@ LDSCRIPT    = libopencm3/lib/stm32/f1/stm32f103x8.ld
 SERIAL      = /dev/ttyUSB0
 OBJS        = vserprog.o \
               usbcdc.o \
+              spi.o \
 
 
 DOCS        = README.html

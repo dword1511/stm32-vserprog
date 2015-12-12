@@ -6,47 +6,250 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/usb/usbd.h>
 
+#include "flashrom/serprog.h"
+#include "flashrom/flash.h" /* For bus type */
+
 #include "usbcdc.h"
+#include "spi.h"
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+#define S_IFACE_VERSION   0x01             /* Currently version 1 */
+#define S_PGM_NAME        "stm32-vserprog" /* The program's name, must < 16 bytes */
+#define S_SUPPORTED_BUS   BUS_SPI
+#define S_CMD_MAP ( \
+  (1 << S_CMD_NOP)       | \
+  (1 << S_CMD_Q_IFACE)   | \
+  (1 << S_CMD_Q_CMDMAP)  | \
+  (1 << S_CMD_Q_PGMNAME) | \
+  (1 << S_CMD_Q_SERBUF)  | \
+  (1 << S_CMD_Q_BUSTYPE) | \
+  (1 << S_CMD_SYNCNOP)   | \
+  (1 << S_CMD_O_SPIOP)   | \
+  (1 << S_CMD_S_BUSTYPE) | \
+  (1 << S_CMD_S_SPI_FREQ)  \
+)
 
-#define PACKET_SIZE 64
-#define BUFFER_SIZE 256
+#define LED_ENABLE()  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO0)
+#define LED_DISABLE() gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO0)
+#define LED_BUSY()    gpio_set(GPIOA, GPIO0)
+#define LED_IDLE()    gpio_clear(GPIOA, GPIO0)
+
+void handle_command(unsigned char command) {
+  static uint8_t   i;        /* Loop                */
+  static uint8_t   l;        /* Length              */
+  static uint32_t  slen;     /* SPIOP write length  */
+  static uint32_t  rlen;     /* SPIOP read length   */
+  static uint32_t  freq_req; /* Requested SPI clock */
+
+  LED_BUSY();
+
+  switch(command) {
+    case S_CMD_NOP: {
+      usbcdc_putc(S_ACK);
+      break;
+    }
+
+    case S_CMD_Q_IFACE: {
+      usbcdc_putc(S_ACK);
+
+      /* little endian multibyte value to complete to 16bit */
+      usbcdc_putc(S_IFACE_VERSION);
+      usbcdc_putc(0);
+
+      break;
+    }
+
+    case S_CMD_Q_CMDMAP: {
+      usbcdc_putc(S_ACK);
+
+      /* little endian */
+      usbcdc_putu32(S_CMD_MAP);
+
+      for(i = 0; i < 32 - sizeof(uint32_t); i++) {
+        usbcdc_putc(0);
+      }
+
+      break;
+    }
+
+    case S_CMD_Q_PGMNAME: {
+      usbcdc_putc(S_ACK);
+
+      l = 0;
+      while(S_PGM_NAME[l]) {
+        usbcdc_putc(S_PGM_NAME[l]);
+        l ++;
+      }
+
+      for(i = l; i < 16; i++) {
+        usbcdc_putc(0);
+      }
+
+      break;
+    }
+
+    case S_CMD_Q_SERBUF: {
+      usbcdc_putc(S_ACK);
+
+      /* Pretend to be 64K (0xffff) */
+      usbcdc_putc(0xff);
+      usbcdc_putc(0xff);
+
+      break;
+    }
+
+    case S_CMD_Q_BUSTYPE: {
+      // TODO: LPC / FWH IO support via PP-Mode
+      usbcdc_putc(S_ACK);
+      usbcdc_putc(S_SUPPORTED_BUS);
+
+      break;
+    }
+
+    case S_CMD_Q_CHIPSIZE: {
+      break;
+    }
+
+    case S_CMD_Q_OPBUF: {
+      // TODO: opbuf function 0
+      break;
+    }
+
+    case S_CMD_Q_WRNMAXLEN: {
+      break;
+    }
+
+    case S_CMD_R_BYTE: {
+      break;
+    }
+
+    case S_CMD_R_NBYTES: {
+      break;
+    }
+
+    case S_CMD_O_INIT: {
+      break;
+    }
+
+    case S_CMD_O_WRITEB: {
+      // TODO: opbuf function 1
+      break;
+    }
+
+    case S_CMD_O_WRITEN: {
+      // TODO: opbuf function 2
+      break;
+    }
+
+    case S_CMD_O_DELAY: {
+      // TODO: opbuf function 3
+      break;
+    }
+
+    case S_CMD_O_EXEC: {
+      // TODO: opbuf function 4
+      break;
+    }
+
+    case S_CMD_SYNCNOP: {
+      usbcdc_putc(S_NAK);
+      usbcdc_putc(S_ACK);
+
+      break;
+    }
+
+    case S_CMD_Q_RDNMAXLEN: {
+      // TODO
+      break;
+    }
+
+    case S_CMD_S_BUSTYPE: {
+      /* We do not have multiplexed bus interfaces,
+       * so simply ack on supported types, no setup needed. */
+      if((usbcdc_getc() | S_SUPPORTED_BUS) == S_SUPPORTED_BUS) {
+        usbcdc_putc(S_ACK);
+      } else {
+        usbcdc_putc(S_NAK);
+      }
+
+      break;
+    }
+
+    case S_CMD_O_SPIOP: {
+      slen = usbcdc_getu24();
+      rlen = usbcdc_getu24();
+
+      SPI_SELECT();
+
+      /* TODO: handle errors with S_NAK */
+      if(slen) {
+        spi_bulk_write(slen);
+      }
+      usbcdc_putc(S_ACK); // TODO: S_ACK early for better performance (so while DMA is working, programmer can receive next command)?
+      if(rlen) {
+        spi_bulk_read(rlen);
+      }
+
+      SPI_UNSELECT();
+      break;
+    }
+
+    case S_CMD_S_SPI_FREQ: {
+      freq_req = usbcdc_getu32();
+
+      if(freq_req == 0) {
+        usbcdc_putc(S_NAK);
+      } else {
+        usbcdc_putc(S_ACK);
+        usbcdc_putu32(spi_setup(freq_req));
+      }
+
+      break;
+    }
+
+    case S_CMD_S_PIN_STATE: {
+      // TODO: OE
+      break;
+    }
+
+    default: {
+      break; // TODO: Debug malformed command
+    }
+  }
+
+  LED_IDLE();
+}
 
 int main(void) {
+  uint32_t i;
+
   rcc_clock_setup_in_hse_8mhz_out_72mhz();
   rcc_periph_clock_enable(RCC_GPIOA);
   rcc_periph_clock_enable(RCC_GPIOB);
   rcc_periph_clock_enable(RCC_AFIO);
   gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_OFF, AFIO_MAPR_TIM2_REMAP_FULL_REMAP);
 
-  /* Setup PA0 for the LED. */
-  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO0);
-  gpio_set(GPIOA, GPIO0);
+  LED_ENABLE();
+  LED_BUSY();
 
   /* Setup PB3 to pull up the D+ high. */
   gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO3);
   gpio_set(GPIOB, GPIO3);
 
   usbcdc_init();
-
-  gpio_clear(GPIOA, GPIO0);
-
-
+  spi_setup(SPI_DEFAULT_CLOCK);
   /* Wait 500ms for USB setup to complete before trying to send anything. */
+  for (i = 0; i < 10000000; i ++) {
+    asm("nop");
+  }
 
+  LED_IDLE();
 
   /* The loop. */
-  int i;
   while (true) {
-    for (i = 0; i < 10000000; i ++) {
-      asm("nop");
-    }
-    gpio_toggle(GPIOA, GPIO0);
-    usbcdc_write("HELLO!\r\n", 8);
+    handle_command(usbcdc_getc());
   }
 
   return 0;
 }
 
-/* Interrupts */
+/* Interrupts (currently none here) */

@@ -1,11 +1,18 @@
-#ifndef __STM32_FREQMETER_USB_CDC_H__
-#define __STM32_FREQMETER_USB_CDC_H__
+#ifndef __STM32_VSERPOG_USB_CDC_H__
+#define __STM32_VSERPOG_USB_CDC_H__
 
 #include <stdint.h>
 #include <stddef.h>
 
-void usbcdc_init(void);
-uint16_t usbcdc_write(char* buf, size_t len);
-char usbcdc_getc(void);
+#define USBCDC_PKT_SIZE_DAT 64
+#define USBCDC_PKT_SIZE_INT 16
 
-#endif /* __STM32_FREQMETER_USB_CDC_H__ */
+void     usbcdc_init(void);
+uint16_t usbcdc_write(char* buf, size_t len);
+uint16_t usbcdc_putc(char c);
+uint16_t usbcdc_putu32(uint32_t word);
+char     usbcdc_getc(void);
+uint32_t usbcdc_getu24(void);
+uint32_t usbcdc_getu32(void);
+
+#endif /* __STM32_VSERPOG_USB_CDC_H__ */

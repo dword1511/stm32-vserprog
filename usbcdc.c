@@ -8,17 +8,17 @@
 
 #define UID_LEN  (12 * 2 + 1) /* 12-byte, each byte turnned into 2-byte hex, then '\0'. */
 
-#define DEV_VID  0x0483 /* ST Microelectronics */
-#define DEV_PID  0x5740 /* STM32 */
-#define DEV_VER  0x0009 /* 0.9 */
+#define DEV_VID    0x0483 /* ST Microelectronics */
+#define DEV_PID    0x5740 /* STM32 */
+#define DEV_VER    0x0009 /* 0.9 */
 
-#define EP_INT   0x83
-#define EP_OUT   0x82
-#define EP_IN    0x01
+#define EP_INT     0x83
+#define EP_OUT     0x82
+#define EP_IN      0x01
 
-#define STR_MAN  0x01
-#define STR_PROD 0x02
-#define STR_SER  0x03
+#define STR_MAN    0x01
+#define STR_PROD   0x02
+#define STR_SER    0x03
 
 #include "usbcdc.h"
 
@@ -29,7 +29,7 @@ static const struct usb_device_descriptor dev = {
   .bDeviceClass       = USB_CLASS_CDC,
   .bDeviceSubClass    = 0,
   .bDeviceProtocol    = 0,
-  .bMaxPacketSize0    = 64,
+  .bMaxPacketSize0    = USBCDC_PKT_SIZE_DAT,
   .idVendor           = DEV_VID,
   .idProduct          = DEV_PID,
   .bcdDevice          = DEV_VER,
@@ -49,7 +49,7 @@ static const struct usb_endpoint_descriptor comm_endp[] = {{
   .bDescriptorType    = USB_DT_ENDPOINT,
   .bEndpointAddress   = EP_INT,
   .bmAttributes       = USB_ENDPOINT_ATTR_INTERRUPT,
-  .wMaxPacketSize     = 16,
+  .wMaxPacketSize     = USBCDC_PKT_SIZE_INT,
   .bInterval          = 255,
 }};
 
@@ -58,14 +58,14 @@ static const struct usb_endpoint_descriptor data_endp[] = {{
   .bDescriptorType    = USB_DT_ENDPOINT,
   .bEndpointAddress   = EP_IN,
   .bmAttributes       = USB_ENDPOINT_ATTR_BULK,
-  .wMaxPacketSize     = 64,
+  .wMaxPacketSize     = USBCDC_PKT_SIZE_DAT,
   .bInterval          = 1,
 }, {
   .bLength            = USB_DT_ENDPOINT_SIZE,
   .bDescriptorType    = USB_DT_ENDPOINT,
   .bEndpointAddress   = EP_OUT,
   .bmAttributes       = USB_ENDPOINT_ATTR_BULK,
-  .wMaxPacketSize     = 64,
+  .wMaxPacketSize     = USBCDC_PKT_SIZE_DAT,
   .bInterval          = 1,
 }};
 
@@ -222,26 +222,67 @@ void usbcdc_init(void) {
   nvic_enable_irq(NVIC_USB_WAKEUP_IRQ);
 }
 
-#if 1
-
+/* Application-level functions */
 uint16_t usbcdc_write(char* buf, size_t len) {
   return usbd_ep_write_packet(usbd_dev, EP_OUT, buf, len);
 }
 
-/* '\0' is used to indicate empty buffer here. */
-char usbcdc_getc(void) {
-  int ret;
-  char c;
-
-  ret = usbd_ep_read_packet(usbd_dev, EP_IN, &c, 1);
-  if (0 == ret) {
-    return '\0';
-  } else {
-    return c;
-  }
+uint16_t usbcdc_putc(char c) {
+  return usbd_ep_write_packet(usbd_dev, EP_OUT, &c, 1);
 }
 
-#endif
+uint16_t usbcdc_putu32(uint32_t word) {
+  uint32_t l = __builtin_bswap32(word);
+
+  return usbd_ep_write_packet(usbd_dev, EP_OUT, &l, 4);
+}
+
+/* We need to maintain a RX user buffer since libopencm3 will throw rest of the package away. */
+char    usbcdc_rxbuf[USBCDC_PKT_SIZE_DAT];
+uint8_t usbcdc_rxbuf_head = 0;
+uint8_t usbcdc_rxbuf_tail = 0; /* indicates empty buffer */
+
+static uint16_t usbcdc_fetch_packet(void) {
+  uint16_t ret;
+  /* Blocking read. Assume RX user buffer is empty. TODO: consider setting a timeout */
+  while (0 == (ret = usbd_ep_read_packet(usbd_dev, EP_IN, usbcdc_rxbuf, USBCDC_PKT_SIZE_DAT)));
+  usbcdc_rxbuf_head = 0;
+  usbcdc_rxbuf_tail = ret;
+  return ret;
+}
+
+char usbcdc_getc(void) {
+  char c;
+
+  if (usbcdc_rxbuf_head >= usbcdc_rxbuf_tail) {
+    usbcdc_fetch_packet();
+  }
+
+  c = usbcdc_rxbuf[usbcdc_rxbuf_head];
+  usbcdc_rxbuf_head ++;
+  return c;
+}
+
+uint32_t usbcdc_getu24(void) {
+  uint32_t val = 0;
+
+  val  = (uint32_t)usbcdc_getc() << 0;
+  val |= (uint32_t)usbcdc_getc() << 8;
+  val |= (uint32_t)usbcdc_getc() << 16;
+
+  return val;
+}
+
+uint32_t usbcdc_getu32(void) {
+  uint32_t val = 0;
+
+  val  = (uint32_t)usbcdc_getc() << 0;
+  val |= (uint32_t)usbcdc_getc() << 8;
+  val |= (uint32_t)usbcdc_getc() << 16;
+  val |= (uint32_t)usbcdc_getc() << 24;
+
+  return val;
+}
 
 /* Interrupts */
 
