@@ -1,6 +1,3 @@
 [submodule "libopencm3"]
 	path = libopencm3
 	url = https://github.com/libopencm3/libopencm3.git
-[submodule "libfrser"]
-	path = libfrser
-	url = https://github.com/urjaman/libfrser.git
