@@ -29,8 +29,9 @@ INCS        = -Ilibopencm3/include/
 FP_FLAGS    = -msoft-float
 ARCH_FLAGS  = -mthumb -mcpu=cortex-m3 $(FP_FLAGS) -mfix-cortex-m3-ldrd
 
-CFLAGS     += -Os -Wall -g
-#CFLAGS     += -Wextra
+CFLAGS     += -O3 -Wall -g
+#CFLAGS     += -Os -Wall -g
+#CFLAGS     += -Wextra -fprofile-generate -fprofile-use
 CFLAGS     += -fno-common -ffunction-sections -fdata-sections
 CFLAGS     += $(ARCH_FLAGS) $(DEFS) $(INCS)
 
@@ -68,7 +69,7 @@ $(DMP): $(ELF)
 $(LDPATH)$(LIBOPENCM3):
 	git submodule init
 	git submodule update --remote
-	make -C libopencm3 lib/stm32/f1
+	CFLAGS="$(CFLAGS)" make -C libopencm3 lib/stm32/f1 V=1
 
 .PHONY: clean distclean flash size
 

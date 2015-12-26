@@ -218,7 +218,7 @@ void handle_command(unsigned char command) {
     }
 
     default: {
-      break; // TODO: Debug malformed command
+      break; // TODO: notify protocol failure malformed command
     }
   }
 
@@ -228,14 +228,14 @@ void handle_command(unsigned char command) {
 int main(void) {
   uint32_t i;
 
-  rcc_clock_setup_in_hse_8mhz_out_72mhz();
   rcc_periph_clock_enable(RCC_GPIOA);
+  LED_ENABLE();
+  LED_BUSY();
+
+  rcc_clock_setup_in_hse_8mhz_out_72mhz();
   rcc_periph_clock_enable(RCC_GPIOB);
   rcc_periph_clock_enable(RCC_AFIO);
   gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_OFF, AFIO_MAPR_TIM2_REMAP_FULL_REMAP);
-
-  LED_ENABLE();
-  LED_BUSY();
 
   /* Setup PB3 to pull up the D+ high. */
   gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO3);
@@ -244,10 +244,10 @@ int main(void) {
   usbcdc_init();
   spi_setup(SPI_DEFAULT_CLOCK);
   /* Wait 500ms for USB setup to complete before trying to send anything. */
+  /* FIXME: in ST's USB library there is some way to tell whether USB has finished initialization. */
   for (i = 0; i < 10000000; i ++) {
     asm("nop");
   }
-
   LED_IDLE();
 
   /* The loop. */
@@ -259,3 +259,25 @@ int main(void) {
 }
 
 /* Interrupts (currently none here) */
+
+static void signal_fault(void) {
+  uint32_t i;
+
+  while (true) {
+    LED_ENABLE();
+    LED_BUSY();
+    for (i = 0; i < 5000000; i ++) {
+      asm("nop");
+    }
+    LED_DISABLE();
+    for (i = 0; i < 5000000; i ++) {
+      asm("nop");
+    }
+  }
+}
+
+void nmi_handler(void)
+__attribute__ ((alias ("signal_fault")));
+
+void hard_fault_handler(void)
+__attribute__ ((alias ("signal_fault")));

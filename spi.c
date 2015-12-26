@@ -1,13 +1,34 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/spi.h>
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/dma.h>
 
 #include "spi.h"
+#include "usbcdc.h"
+
+#define likely(x)   __builtin_expect((x), 1)
+#define unlikely(x) __builtin_expect((x), 0)
+
+#define SPI_DMA_RX_CH DMA_CHANNEL2
+#define SPI_DMA_TX_CH DMA_CHANNEL3
+
+static uint8_t dma_txbuf[USBCDC_PKT_SIZE_DAT];
+static uint8_t dma_rxbuf[USBCDC_PKT_SIZE_DAT];
+static uint8_t dma_ckbuf[USBCDC_PKT_SIZE_DAT];
 
 uint32_t spi_setup(uint32_t speed_hz) {
   uint32_t clkdiv;
   uint32_t relspd;
+  int i;
 
-  /* SPI bus is on APB2 which runs at 72MHz. */
+  rcc_periph_clock_enable(RCC_SPI1);
+  rcc_periph_clock_enable(RCC_DMA1);
+
+  for (i = 0; i < USBCDC_PKT_SIZE_DAT; i ++) {
+    dma_ckbuf[i] = 0;
+  }
+
+  /* SPI1 is on APB2 which runs at 72MHz. Assume f = f_PCLK / 2 = 36MHz (whereas datasheet says 16MHz max but reference manual has no such word). */
   /* Lowest available */
   clkdiv = SPI_CR1_BAUDRATE_FPCLK_DIV_256;
   relspd = 281250;
@@ -48,9 +69,9 @@ uint32_t spi_setup(uint32_t speed_hz) {
   }
 
   /* Configure GPIOs: SS = PA4, SCK = PA5, MISO = PA6, MOSI = PA7 */
-  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5 | GPIO7);
-  gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO6);
-  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO4); /* SS is manual */
+  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_SPI1_SCK | GPIO_SPI1_MOSI);
+  gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_SPI1_MISO);
+  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_SPI1_NSS); /* SS is manual */
 
   /* Reset SPI, SPI_CR1 register cleared, SPI is disabled */
   spi_reset(SPI1);
@@ -89,12 +110,103 @@ uint32_t spi_setup(uint32_t speed_hz) {
   return relspd;
 }
 
-/* TODO: DMA RW */
+static void spi_dma_write(size_t len) {
+  /* Reset DMA channels */
+  dma_channel_reset(DMA1, SPI_DMA_TX_CH);
+
+  /* Configure TX */
+  dma_set_peripheral_address(DMA1, SPI_DMA_TX_CH, (uint32_t)&SPI1_DR);
+  dma_set_memory_address(DMA1, SPI_DMA_TX_CH, (uint32_t)(&dma_ckbuf));
+  dma_set_number_of_data(DMA1, SPI_DMA_TX_CH, len);
+  dma_set_read_from_memory(DMA1, SPI_DMA_TX_CH);
+  dma_enable_memory_increment_mode(DMA1, SPI_DMA_TX_CH);
+  dma_set_peripheral_size(DMA1, SPI_DMA_TX_CH, DMA_CCR_PSIZE_8BIT);
+  dma_set_memory_size(DMA1, SPI_DMA_TX_CH, DMA_CCR_MSIZE_8BIT);
+  dma_set_priority(DMA1, SPI_DMA_TX_CH, DMA_CCR_PL_HIGH);
+
+  dma_enable_channel(DMA1, SPI_DMA_TX_CH);
+  spi_enable_tx_dma(SPI1);
+}
+
+static void spi_dma_read(size_t len) {
+  static uint8_t i = 0;
+
+  /* Reset DMA channels */
+  dma_channel_reset(DMA1, SPI_DMA_RX_CH);
+  dma_channel_reset(DMA1, SPI_DMA_TX_CH);
+
+  /* Configure RX */
+  dma_set_peripheral_address(DMA1, SPI_DMA_RX_CH, (uint32_t)&SPI1_DR);
+  dma_set_memory_address(DMA1, SPI_DMA_RX_CH, (uint32_t)dma_rxbuf);
+  dma_set_number_of_data(DMA1, SPI_DMA_RX_CH, len);
+  dma_set_read_from_peripheral(DMA1, SPI_DMA_RX_CH);
+  dma_enable_memory_increment_mode(DMA1, SPI_DMA_RX_CH);
+  dma_set_peripheral_size(DMA1, SPI_DMA_RX_CH, DMA_CCR_PSIZE_8BIT);
+  dma_set_memory_size(DMA1, SPI_DMA_RX_CH, DMA_CCR_MSIZE_8BIT);
+  dma_set_priority(DMA1, SPI_DMA_RX_CH, DMA_CCR_PL_VERY_HIGH);
+
+  /* Configure TX (for SPI clock) */
+  dma_set_peripheral_address(DMA1, SPI_DMA_TX_CH, (uint32_t)&SPI1_DR);
+  dma_set_memory_address(DMA1, SPI_DMA_TX_CH, (uint32_t)(&i));
+  dma_set_number_of_data(DMA1, SPI_DMA_TX_CH, len);
+  dma_set_read_from_memory(DMA1, SPI_DMA_TX_CH);
+  dma_disable_memory_increment_mode(DMA1, SPI_DMA_TX_CH); /* Do not polute cache */
+  dma_set_peripheral_size(DMA1, SPI_DMA_TX_CH, DMA_CCR_PSIZE_8BIT);
+  dma_set_memory_size(DMA1, SPI_DMA_TX_CH, DMA_CCR_MSIZE_8BIT);
+  dma_set_priority(DMA1, SPI_DMA_TX_CH, DMA_CCR_PL_HIGH);
+
+  dma_enable_channel(DMA1, SPI_DMA_RX_CH);
+  dma_enable_channel(DMA1, SPI_DMA_TX_CH);
+  spi_enable_rx_dma(SPI1);
+  spi_enable_tx_dma(SPI1);
+}
+
+static void spi_copy_to_usb(uint32_t len) {
+  while (len) {
+    spi_send(SPI1, 0x00);
+    usbcdc_putc(spi_read(SPI1));
+    len --;
+  }
+}
+
+static void spi_copy_from_usb(uint32_t len) {
+  while (len) {
+    spi_send(SPI1, usbcdc_getc());
+    spi_read(SPI1);
+    len --;
+  }
+}
+
 void spi_bulk_read(uint32_t rlen) {
-  
+  while (likely(rlen >= USBCDC_PKT_SIZE_DAT)) {
+    spi_dma_read(USBCDC_PKT_SIZE_DAT);
+    rlen -= USBCDC_PKT_SIZE_DAT;
+
+    while (unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF))); /* It is liklely, but we want to exit loop with low latency. */
+    dma_clear_interrupt_flags(DMA1, SPI_DMA_RX_CH, DMA_TCIF);
+    spi_disable_rx_dma(SPI1);
+    spi_disable_tx_dma(SPI1);
+    dma_disable_channel(DMA1, SPI_DMA_RX_CH);
+    dma_disable_channel(DMA1, SPI_DMA_TX_CH);
+    usbcdc_write(dma_rxbuf, USBCDC_PKT_SIZE_DAT);
+  }
+
+  /* Leftover only happens when reading individual registers. */
+  if (unlikely(rlen > 0)) {
+    spi_dma_read(rlen);
+
+    while(unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF)));
+    dma_clear_interrupt_flags(DMA1, SPI_DMA_RX_CH, DMA_TCIF);
+    spi_disable_rx_dma(SPI1);
+    spi_disable_tx_dma(SPI1);
+    dma_disable_channel(DMA1, SPI_DMA_RX_CH);
+    dma_disable_channel(DMA1, SPI_DMA_TX_CH);
+
+    usbcdc_write(dma_rxbuf, rlen);
+  }
 }
 
 void spi_bulk_write(uint32_t slen) {
-  
+  spi_copy_from_usb(slen);
 }
 
