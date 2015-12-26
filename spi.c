@@ -12,21 +12,14 @@
 #define SPI_DMA_RX_CH DMA_CHANNEL2
 #define SPI_DMA_TX_CH DMA_CHANNEL3
 
-static uint8_t dma_txbuf[USBCDC_PKT_SIZE_DAT];
 static uint8_t dma_rxbuf[USBCDC_PKT_SIZE_DAT];
-static uint8_t dma_ckbuf[USBCDC_PKT_SIZE_DAT];
 
 uint32_t spi_setup(uint32_t speed_hz) {
   uint32_t clkdiv;
   uint32_t relspd;
-  int i;
 
   rcc_periph_clock_enable(RCC_SPI1);
   rcc_periph_clock_enable(RCC_DMA1);
-
-  for (i = 0; i < USBCDC_PKT_SIZE_DAT; i ++) {
-    dma_ckbuf[i] = 0;
-  }
 
   /* SPI1 is on APB2 which runs at 72MHz. Assume f = f_PCLK / 2 = 36MHz (whereas datasheet says 16MHz max but reference manual has no such word). */
   /* Lowest available */
@@ -110,13 +103,16 @@ uint32_t spi_setup(uint32_t speed_hz) {
   return relspd;
 }
 
-static void spi_dma_write(size_t len) {
+static void spi_dma_write(uint16_t len, char *buf) {
+  static uint8_t tmp = 0;
+
   /* Reset DMA channels */
+  dma_channel_reset(DMA1, SPI_DMA_RX_CH);
   dma_channel_reset(DMA1, SPI_DMA_TX_CH);
 
   /* Configure TX */
   dma_set_peripheral_address(DMA1, SPI_DMA_TX_CH, (uint32_t)&SPI1_DR);
-  dma_set_memory_address(DMA1, SPI_DMA_TX_CH, (uint32_t)(&dma_ckbuf));
+  dma_set_memory_address(DMA1, SPI_DMA_TX_CH, (uint32_t)buf);
   dma_set_number_of_data(DMA1, SPI_DMA_TX_CH, len);
   dma_set_read_from_memory(DMA1, SPI_DMA_TX_CH);
   dma_enable_memory_increment_mode(DMA1, SPI_DMA_TX_CH);
@@ -124,12 +120,24 @@ static void spi_dma_write(size_t len) {
   dma_set_memory_size(DMA1, SPI_DMA_TX_CH, DMA_CCR_MSIZE_8BIT);
   dma_set_priority(DMA1, SPI_DMA_TX_CH, DMA_CCR_PL_HIGH);
 
+  /* Configure RX (for collecting garbage from SPI controller) */
+  dma_set_peripheral_address(DMA1, SPI_DMA_RX_CH, (uint32_t)&SPI1_DR);
+  dma_set_memory_address(DMA1, SPI_DMA_RX_CH, (uint32_t)(&tmp));
+  dma_set_number_of_data(DMA1, SPI_DMA_RX_CH, len);
+  dma_set_read_from_peripheral(DMA1, SPI_DMA_RX_CH);
+  dma_disable_memory_increment_mode(DMA1, SPI_DMA_RX_CH); /* Do not polute cache */
+  dma_set_peripheral_size(DMA1, SPI_DMA_RX_CH, DMA_CCR_PSIZE_8BIT);
+  dma_set_memory_size(DMA1, SPI_DMA_RX_CH, DMA_CCR_MSIZE_8BIT);
+  dma_set_priority(DMA1, SPI_DMA_RX_CH, DMA_CCR_PL_VERY_HIGH);
+
+  dma_enable_channel(DMA1, SPI_DMA_RX_CH);
   dma_enable_channel(DMA1, SPI_DMA_TX_CH);
+  spi_enable_rx_dma(SPI1);
   spi_enable_tx_dma(SPI1);
 }
 
-static void spi_dma_read(size_t len) {
-  static uint8_t i = 0;
+static void spi_dma_read(uint16_t len) {
+  static uint8_t tmp = 0;
 
   /* Reset DMA channels */
   dma_channel_reset(DMA1, SPI_DMA_RX_CH);
@@ -147,7 +155,7 @@ static void spi_dma_read(size_t len) {
 
   /* Configure TX (for SPI clock) */
   dma_set_peripheral_address(DMA1, SPI_DMA_TX_CH, (uint32_t)&SPI1_DR);
-  dma_set_memory_address(DMA1, SPI_DMA_TX_CH, (uint32_t)(&i));
+  dma_set_memory_address(DMA1, SPI_DMA_TX_CH, (uint32_t)(&tmp));
   dma_set_number_of_data(DMA1, SPI_DMA_TX_CH, len);
   dma_set_read_from_memory(DMA1, SPI_DMA_TX_CH);
   dma_disable_memory_increment_mode(DMA1, SPI_DMA_TX_CH); /* Do not polute cache */
@@ -161,6 +169,7 @@ static void spi_dma_read(size_t len) {
   spi_enable_tx_dma(SPI1);
 }
 
+/* Old CPU copying code */
 static void spi_copy_to_usb(uint32_t len) {
   while (len) {
     spi_send(SPI1, 0x00);
@@ -188,6 +197,7 @@ void spi_bulk_read(uint32_t rlen) {
     spi_disable_tx_dma(SPI1);
     dma_disable_channel(DMA1, SPI_DMA_RX_CH);
     dma_disable_channel(DMA1, SPI_DMA_TX_CH);
+
     usbcdc_write(dma_rxbuf, USBCDC_PKT_SIZE_DAT);
   }
 
@@ -207,6 +217,39 @@ void spi_bulk_read(uint32_t rlen) {
 }
 
 void spi_bulk_write(uint32_t slen) {
-  spi_copy_from_usb(slen);
-}
+  uint8_t urlen;
+  char *urbuf;
 
+  urlen = usbcdc_get_remainder(&urbuf);
+
+  /* Due to the characteristics of flashrom and serprog protocol, slen >= urlen. */
+  if (urlen > 0) {
+    spi_dma_write(urlen, urbuf);
+    slen -= urlen;
+
+    /* Always check RX flag to avoid leftovers in SPI_DR, which messes data up. */
+    while (unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF))); /* It is liklely, but we want to exit loop with low latency. */
+    dma_clear_interrupt_flags(DMA1, SPI_DMA_RX_CH, DMA_TCIF);
+    spi_disable_rx_dma(SPI1);
+    spi_disable_tx_dma(SPI1);
+    dma_disable_channel(DMA1, SPI_DMA_RX_CH);
+    dma_disable_channel(DMA1, SPI_DMA_TX_CH);
+  }
+
+  /* We have no control over packet size here. */
+  while (likely(slen > 0)) {
+    urlen = usbcdc_fetch_packet();
+    spi_dma_write(urlen, usbcdc_rxbuf);
+    slen -= urlen;
+
+    while (unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF))); /* It is liklely, but we want to exit loop with low latency. */
+    dma_clear_interrupt_flags(DMA1, SPI_DMA_RX_CH, DMA_TCIF);
+    spi_disable_rx_dma(SPI1);
+    spi_disable_tx_dma(SPI1);
+    dma_disable_channel(DMA1, SPI_DMA_RX_CH);
+    dma_disable_channel(DMA1, SPI_DMA_TX_CH);
+  }
+
+  /* Mark USB RX buffer as used. */
+  usbcdc_get_remainder(&urbuf);
+}

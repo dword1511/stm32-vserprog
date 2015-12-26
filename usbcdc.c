@@ -242,12 +242,12 @@ uint16_t usbcdc_putu32(uint32_t word) {
   return usbcdc_write(&word, sizeof(word));
 }
 
-/* We need to maintain a RX user buffer since libopencm3 will throw rest of the package away. */
-char    usbcdc_rxbuf[USBCDC_PKT_SIZE_DAT];
-uint8_t usbcdc_rxbuf_head = 0;
-uint8_t usbcdc_rxbuf_tail = 0; /* indicates empty buffer */
+/* We need to maintain a RX user buffer since libopencm3 will throw rest of the packet away. */
+char usbcdc_rxbuf[USBCDC_PKT_SIZE_DAT]; /* DMA needs access */
+static uint8_t usbcdc_rxbuf_head = 0;
+static uint8_t usbcdc_rxbuf_tail = 0; /* Indicates empty buffer */
 
-static uint16_t usbcdc_fetch_packet(void) {
+uint16_t usbcdc_fetch_packet(void) {
   uint16_t ret;
   /* Blocking read. Assume RX user buffer is empty. TODO: consider setting a timeout */
   while (0 == (ret = usbd_ep_read_packet(usbd_dev, EP_IN, usbcdc_rxbuf, USBCDC_PKT_SIZE_DAT)));
@@ -287,6 +287,15 @@ uint32_t usbcdc_getu32(void) {
   val |= (uint32_t)usbcdc_getc() << 24;
 
   return val;
+}
+
+uint8_t usbcdc_get_remainder(char **bufpp) {
+  uint8_t len = usbcdc_rxbuf_tail - usbcdc_rxbuf_head;
+
+  *bufpp = &(usbcdc_rxbuf[usbcdc_rxbuf_head]);
+  usbcdc_rxbuf_head = usbcdc_rxbuf_tail; /* Mark as used. */
+
+  return len;
 }
 
 /* Interrupts */
