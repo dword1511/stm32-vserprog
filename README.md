@@ -31,7 +31,7 @@
   * Read speed up to 850KiB/s @ 36MHz SPI operation.
   * Dumps a EN25Q64 in 11 seconds and programs in 85 seconds (including flashrom calibration time).
   * Way faster than many commercial CH341-based USB programmers, especially for reading.
-* Support 25 and 26 series SPI flash chips. 45 series is **NOT** supported by flashrom.
+* Support 25 and 26 series SPI flash chips. **45 series has different pinout, thus for the PCB provided with the project you will need an adapter.**
 
 * * *
 ### Installation
