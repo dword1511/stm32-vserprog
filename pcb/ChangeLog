@@ -1,0 +1,22 @@
+[v3]
+ * Made board narrower
+ * Changed MCU orientation on the board
+ * Route all signals on top layer when possible
+ * Added socket for 45-series data flash (which has different pinout), intended for connecting adapter / test socket boards
+ * Added write-protect switch as a jumper and indicator LED for it
+ * Power supply for flashes
+ * New programming header, removes GND since USB provides it, BOOT0 back as a pin
+ * Removed unnecessary capacitor on nRST
+ * Move D+ pullup from PB3 to PA13
+ * Schematic clean up
+ * Changed all vias into 13mil.
+
+[v2]
+ * Fixed MCU package
+ * Fixed XTAL connection
+ * Silk under MCU and XTAL for inspection and isolation
+ * Removed unnecessary connections on the programming header since plugging into USB provides power and reset, BOOT0 as a solder jumper
+ * Removed unnecessary pullup on nRST
+
+[v1]
+ * Initial attempt
