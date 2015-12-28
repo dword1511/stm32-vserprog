@@ -8,8 +8,8 @@
 
 #define SPI_DEFAULT_CLOCK 36000000
 
-#define SPI_SELECT()   gpio_clear(GPIOA, GPIO4)
-#define SPI_UNSELECT() gpio_set(GPIOA, GPIO4)
+#define SPI_SELECT()   gpio_clear(GPIOA, GPIO_SPI1_NSS)
+#define SPI_UNSELECT() gpio_set(GPIOA, GPIO_SPI1_NSS)
 
 uint32_t spi_setup(uint32_t speed_hz);
 void spi_bulk_read(uint32_t rlen);

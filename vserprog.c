@@ -9,6 +9,7 @@
 #include "flashrom/serprog.h"
 #include "flashrom/flash.h" /* For bus type */
 
+#include "board.h"
 #include "usbcdc.h"
 #include "spi.h"
 
@@ -28,10 +29,15 @@
   (1 << S_CMD_S_SPI_FREQ)  \
 )
 
-#define LED_ENABLE()  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO0)
-#define LED_DISABLE() gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO0)
-#define LED_BUSY()    gpio_set(GPIOA, GPIO0)
-#define LED_IDLE()    gpio_clear(GPIOA, GPIO0)
+#define LED_ENABLE()  gpio_set_mode(BOARD_PORT_LED, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, BOARD_PIN_LED)
+#define LED_DISABLE() gpio_set_mode(BOARD_PORT_LED, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, BOARD_PIN_LED)
+#if BOARD_LED_HIGH_IS_BUSY
+#define LED_BUSY()    gpio_set(BOARD_PORT_LED, BOARD_PIN_LED)
+#define LED_IDLE()    gpio_clear(BOARD_PORT_LED, BOARD_PIN_LED)
+#else
+#define LED_BUSY()    gpio_clear(BOARD_PORT_LED, BOARD_PIN_LED)
+#define LED_IDLE()    gpio_set(BOARD_PORT_LED, BOARD_PIN_LED)
+#endif
 
 void handle_command(unsigned char command) {
   static uint8_t   i;        /* Loop                */
@@ -228,18 +234,25 @@ void handle_command(unsigned char command) {
 int main(void) {
   uint32_t i;
 
-  rcc_periph_clock_enable(RCC_GPIOA);
+  rcc_periph_clock_enable(BOARD_RCC_LED);
   LED_ENABLE();
   LED_BUSY();
 
   rcc_clock_setup_in_hse_8mhz_out_72mhz();
-  rcc_periph_clock_enable(RCC_GPIOB);
-  rcc_periph_clock_enable(RCC_AFIO);
+  rcc_periph_clock_enable(RCC_GPIOA); /* For USB */
+  rcc_periph_clock_enable(BOARD_RCC_USB_PULLUP);
+  rcc_periph_clock_enable(RCC_AFIO); /* For SPI */
+#if BOARD_USE_DEBUG_PINS_AS_GPIO
   gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_OFF, AFIO_MAPR_TIM2_REMAP_FULL_REMAP);
+#endif
 
   /* Setup PB3 to pull up the D+ high. */
-  gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO3);
-  gpio_set(GPIOB, GPIO3);
+  gpio_set_mode(BOARD_PORT_USB_PULLUP, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, BOARD_PIN_USB_PULLUP);
+#if BOARD_USB_HIGH_IS_PULLUP
+  gpio_set(BOARD_PORT_USB_PULLUP, BOARD_PIN_USB_PULLUP);
+#else
+  gpio_clear(BOARD_PORT_USB_PULLUP, BOARD_PIN_USB_PULLUP);
+#endif
 
   usbcdc_init();
   spi_setup(SPI_DEFAULT_CLOCK);

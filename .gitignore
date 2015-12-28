@@ -9,3 +9,4 @@
 *.map
 *.out
 *.html
+board.h
