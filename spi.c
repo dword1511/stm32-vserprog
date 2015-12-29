@@ -65,6 +65,7 @@ uint32_t spi_setup(uint32_t speed_hz) {
   gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_SPI1_SCK | GPIO_SPI1_MOSI);
   gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_SPI1_MISO);
   gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_SPI1_NSS); /* SS is manual */
+  gpio_set(GPIOA, GPIO_SPI1_MISO);
 
   /* Reset SPI, SPI_CR1 register cleared, SPI is disabled */
   spi_reset(SPI1);
