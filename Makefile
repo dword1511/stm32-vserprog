@@ -9,7 +9,7 @@
 PROGRAM     = stm32-vserprog
 CROSS      ?= arm-none-eabi
 SERIAL     ?= /dev/ttyUSB0
-BOARD      ?= stm32-vserprog-v2
+BOARD      ?= stm32-vserprog-v3
 OBJS        = vserprog.o \
               usbcdc.o \
               spi.o \

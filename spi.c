@@ -21,44 +21,44 @@ uint32_t spi_setup(uint32_t speed_hz) {
   rcc_periph_clock_enable(RCC_SPI1);
   rcc_periph_clock_enable(RCC_DMA1);
 
-  /* SPI1 is on APB2 which runs at 72MHz. Assume f = f_PCLK / 2 = 36MHz (whereas datasheet says 16MHz max but reference manual has no such word). */
+  /* SPI1 is on APB2 which runs at 72MHz. Assume f = f_PCLK / 2 = 36MHz (whereas datasheet says 18MHz max but reference manual has no such word). */
   /* Lowest available */
   clkdiv = SPI_CR1_BAUDRATE_FPCLK_DIV_256;
-  relspd = 281250;
+  relspd = rcc_apb2_frequency / 256;
 
-  if(speed_hz >= 562500) {
+  if(speed_hz >= rcc_apb2_frequency / 128) {
     clkdiv = SPI_CR1_BAUDRATE_FPCLK_DIV_128;
-    relspd = 562500;
+    relspd = rcc_apb2_frequency / 128;
   }
 
-  if(speed_hz >= 1125000) {
+  if(speed_hz >= rcc_apb2_frequency / 64) {
     clkdiv = SPI_CR1_BAUDRATE_FPCLK_DIV_64;
-    relspd = 1125000;
+    relspd = rcc_apb2_frequency / 64;
   }
 
-  if(speed_hz >= 2250000) {
+  if(speed_hz >= rcc_apb2_frequency / 32) {
     clkdiv = SPI_CR1_BAUDRATE_FPCLK_DIV_32;
-    relspd = 2250000;
+    relspd = rcc_apb2_frequency / 32;
   }
 
-  if(speed_hz >= 4500000) {
+  if(speed_hz >= rcc_apb2_frequency / 16) {
     clkdiv = SPI_CR1_BAUDRATE_FPCLK_DIV_16;
-    relspd = 4500000;
+    relspd = rcc_apb2_frequency / 16;
   }
 
-  if(speed_hz >= 9000000) {
+  if(speed_hz >= rcc_apb2_frequency / 8) {
     clkdiv = SPI_CR1_BAUDRATE_FPCLK_DIV_8;
-    relspd = 9000000;
+    relspd = rcc_apb2_frequency / 8;
   }
 
-  if(speed_hz >= 18000000) {
+  if(speed_hz >= rcc_apb2_frequency / 4) {
     clkdiv = SPI_CR1_BAUDRATE_FPCLK_DIV_4;
-    relspd = 18000000;
+    relspd = rcc_apb2_frequency / 4;
   }
 
-  if(speed_hz >= 36000000) {
+  if(speed_hz >= rcc_apb2_frequency / 2) {
     clkdiv = SPI_CR1_BAUDRATE_FPCLK_DIV_2;
-    relspd = 36000000;
+    relspd = rcc_apb2_frequency / 2;
   }
 
   /* Configure GPIOs: SS = PA4, SCK = PA5, MISO = PA6, MOSI = PA7 */

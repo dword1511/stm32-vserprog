@@ -6,7 +6,7 @@
 
 #include <libopencm3/stm32/gpio.h>
 
-#define SPI_DEFAULT_CLOCK 36000000
+#define SPI_DEFAULT_CLOCK 10000000
 
 #define SPI_SELECT()   gpio_clear(GPIOA, GPIO_SPI1_NSS)
 #define SPI_UNSELECT() gpio_set(GPIOA, GPIO_SPI1_NSS)
