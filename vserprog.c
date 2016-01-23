@@ -232,7 +232,12 @@ void handle_command(unsigned char command) {
 }
 
 #ifdef GD32F103
-void rcc_clock_setup_in_hse_12mhz_out_120mhz(void) {
+#define  RCC_GCFGR_ADCPS_DIV12  ((uint32_t)0x10004000)
+#define  RCC_GCFGR_ADCPS_DIV16  ((uint32_t)0x1000C000)
+#define  RCC_GCFGR_USBPS_Div2_5 ((uint32_t)0x00800000)
+#define  RCC_GCFGR_USBPS_Div2   ((uint32_t)0x00C00000)
+
+static void rcc_clock_setup_in_hse_12mhz_out_96mhz(void) {
   /* Enable internal high-speed oscillator. */
   rcc_osc_on(RCC_HSI);
   rcc_wait_for_osc_ready(RCC_HSI);
@@ -247,16 +252,68 @@ void rcc_clock_setup_in_hse_12mhz_out_120mhz(void) {
 
   /*
    * Set prescalers for AHB, ADC, ABP1, ABP2.
-   * Do this before touching the PLL (TODO: why?).
+   * Do this before touching the PLL
+   */
+  rcc_set_hpre(RCC_CFGR_HPRE_SYSCLK_NODIV);   /* Set. 96MHz Max. 108MHz */
+  rcc_set_adcpre(RCC_CFGR_ADCPRE_PCLK2_DIV8); /* Set. 12MHz Max. 14MHz  */
+  rcc_set_ppre1(RCC_CFGR_PPRE1_HCLK_DIV2);    /* Set. 48MHz Max. 54MHz  */
+  rcc_set_ppre2(RCC_CFGR_PPRE2_HCLK_NODIV);   /* Set. 96MHz Max. 108MHz */
+  RCC_CFGR |= RCC_GCFGR_USBPS_Div2;           /* USB Set. 48MHz  Max. 48MHz  */
+
+  /* GD32 has 0-wait-state flash, do not touch anything! */
+
+  /*
+   * Set the PLL multiplication factor to 10.
+   * 12MHz (external) * 8 (multiplier) = 96MHz
+   */
+  rcc_set_pll_multiplication_factor(RCC_CFGR_PLLMUL_PLL_CLK_MUL8);
+
+  /* Select HSE as PLL source. */
+  rcc_set_pll_source(RCC_CFGR_PLLSRC_HSE_CLK);
+
+  /*
+   * External frequency undivided before entering PLL
+   * (only valid/needed for HSE).
+   */
+  rcc_set_pllxtpre(RCC_CFGR_PLLXTPRE_HSE_CLK);
+
+  /* Enable PLL oscillator and wait for it to stabilize. */
+  rcc_osc_on(RCC_PLL);
+  rcc_wait_for_osc_ready(RCC_PLL);
+
+  /* Select PLL as SYSCLK source. */
+  rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_PLLCLK);
+
+  /* Set the peripheral clock frequencies used */
+  rcc_ahb_frequency  = 96000000;
+  rcc_apb1_frequency = 48000000;
+  rcc_apb2_frequency = 96000000;
+}
+
+static void rcc_clock_setup_in_hse_12mhz_out_120mhz(void) {
+  /* Enable internal high-speed oscillator. */
+  rcc_osc_on(RCC_HSI);
+  rcc_wait_for_osc_ready(RCC_HSI);
+
+  /* Select HSI as SYSCLK source. */
+  rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_HSICLK);
+
+  /* Enable external high-speed oscillator 12MHz. */
+  rcc_osc_on(RCC_HSE);
+  rcc_wait_for_osc_ready(RCC_HSE);
+  rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_HSECLK);
+
+  /*
+   * Set prescalers for AHB, ADC, ABP1, ABP2.
+   * Do this before touching the PLL
    */
   rcc_set_hpre(RCC_CFGR_HPRE_SYSCLK_NODIV);      /* Set. 120MHz Max. 108MHz */
-  RCC_CFGR = (RCC_CFGR & ~RCC_CFGR_ADCPRE) | ((uint32_t)0x10004000); /* ADC Set. 12MHz  Max. 14MHz  */
+  RCC_CFGR = (RCC_CFGR & ~RCC_CFGR_ADCPRE) | RCC_GCFGR_ADCPS_DIV12; /* ADC Set. 10MHz  Max. 14MHz  */
   rcc_set_ppre1(RCC_CFGR_PPRE1_HCLK_DIV2);       /* Set. 60MHz  Max. 54MHz  */
   rcc_set_ppre2(RCC_CFGR_PPRE2_HCLK_NODIV);      /* Set. 120MHz Max. 108MHz */
-  RCC_CFGR |= ((uint32_t)0x00800000);            /* USB Set. 48MHz  Max. 48MHz  */
+  RCC_CFGR |= RCC_GCFGR_USBPS_Div2_5;            /* USB Set. 48MHz  Max. 48MHz  */
 
-  /* GD32 has 0-wait-state flash */
-  flash_set_ws(FLASH_ACR_LATENCY_0WS);
+  /* GD32 has 0-wait-state flash, do not touch anything! */
 
   /*
    * Set the PLL multiplication factor to 10.
@@ -319,15 +376,24 @@ int main(void) {
 
   usbcdc_init();
   spi_setup(SPI_DEFAULT_CLOCK);
-  /* Wait 500ms for USB setup to complete before trying to send anything. */
-  /* FIXME: in ST's USB library there is some way to tell whether USB has finished initialization. */
-  for (i = 0; i < 10000000; i ++) {
-    asm("nop");
-  }
-  LED_IDLE();
 
   /* The loop. */
   while (true) {
+    /* Wait and blink if USB is not ready. */
+    LED_IDLE();
+    while (!usb_ready) {
+      LED_DISABLE();
+      for (i = 0; i < 1000000; i ++) {
+        asm("nop");
+      }
+      LED_ENABLE();
+      for (i = 0; i < 1000000; i ++) {
+        asm("nop");
+      }
+    }
+
+    /* Actual thing */
+    /* TODO: we are blocked here, hence no knowledge about USB bet reset. */
     handle_command(usbcdc_getc());
   }
 

@@ -3,6 +3,7 @@
 # * Override toochain: make CROSS=/path/to/arm-none-eabi
 # * Override UART for downloading: make SERIAL=/dev/ttyS1
 # * Override hardware config: make BOARD=some_board_in_boards_folder
+# * Build for GD32 variants with 12MHz crystal: make EXTRA_CFLAGS=-DGD32F103
 
 ###############################################################################
 
@@ -39,7 +40,7 @@ CFLAGS     += -O3 -Wall -g
 #CFLAGS     += -Os -Wall -g
 #CFLAGS     += -Wextra -fprofile-generate -fprofile-use
 CFLAGS     += -fno-common -ffunction-sections -fdata-sections
-CFLAGS     += $(ARCH_FLAGS) -Ilibopencm3/include/
+CFLAGS     += $(ARCH_FLAGS) -Ilibopencm3/include/ $(EXTRA_CFLAGS)
 
 LIBM        = $(shell $(CC) $(CFLAGS) --print-file-name=libm.a)
 LIBC        = $(shell $(CC) $(CFLAGS) --print-file-name=libc.a)

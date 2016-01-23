@@ -187,6 +187,12 @@ static int cdcacm_control_request(usbd_device *usbd_dev, struct usb_setup_data *
   return 0;
 }
 
+volatile bool usb_ready = false;
+
+static void cdcacm_reset(void) {
+  usb_ready = false;
+}
+
 static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue) {
   usbd_ep_setup(usbd_dev, EP_IN , USB_ENDPOINT_ATTR_BULK, 64, NULL);
   usbd_ep_setup(usbd_dev, EP_OUT, USB_ENDPOINT_ATTR_BULK, 64, NULL);
@@ -197,6 +203,10 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue) {
         USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE,
         USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
         cdcacm_control_request);
+
+  if (wValue > 0) {
+    usb_ready = true;
+  }
 }
 
 static usbd_device *usbd_dev; /* Just a pointer, need not to be volatile. */
@@ -215,6 +225,7 @@ void usbcdc_init(void) {
 
   usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
+  usbd_register_reset_callback(usbd_dev, cdcacm_reset);
 
   /* NOTE: Must be called after USB setup since this enables calling usbd_poll(). */
   nvic_enable_irq(NVIC_USB_LP_CAN_RX0_IRQ);

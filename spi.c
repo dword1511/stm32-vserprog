@@ -9,6 +9,7 @@
 #define likely(x)   __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
 
+/* DMA channel and requests has fixed mapping, do not change */
 #define SPI_DMA_RX_CH DMA_CHANNEL2
 #define SPI_DMA_TX_CH DMA_CHANNEL3
 
@@ -66,6 +67,7 @@ uint32_t spi_setup(uint32_t speed_hz) {
   gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_SPI1_MISO);
   gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_SPI1_NSS); /* SS is manual */
   gpio_set(GPIOA, GPIO_SPI1_MISO);
+  gpio_set(GPIOA, GPIO_SPI1_NSS);
 
   /* Reset SPI, SPI_CR1 register cleared, SPI is disabled */
   spi_reset(SPI1);
@@ -187,6 +189,16 @@ static void spi_copy_from_usb(uint32_t len) {
   }
 }
 
+#ifdef GD32F103
+/* FIXME: Currently SPI does not work on GD32 under any clock... */
+void spi_bulk_read(uint32_t rlen) {
+  spi_copy_to_usb(rlen);
+}
+
+void spi_bulk_write(uint32_t slen) {
+  spi_copy_from_usb(slen);
+}
+#else
 void spi_bulk_read(uint32_t rlen) {
   while (likely(rlen >= USBCDC_PKT_SIZE_DAT)) {
     spi_dma_read(USBCDC_PKT_SIZE_DAT);
@@ -254,3 +266,4 @@ void spi_bulk_write(uint32_t slen) {
   /* Mark USB RX buffer as used. */
   usbcdc_get_remainder(&urbuf);
 }
+#endif /* GD32F103 */
