@@ -372,6 +372,8 @@ int main(void) {
 #else
   gpio_clear(BOARD_PORT_USB_PULLUP, BOARD_PIN_USB_PULLUP);
 #endif /* BOARD_USB_HIGH_IS_PULLUP */
+  
+  
 #endif /* STM32F0 */
 
   usbcdc_init();
@@ -383,11 +385,11 @@ int main(void) {
     LED_IDLE();
     while (!usb_ready) {
       LED_DISABLE();
-      for (i = 0; i < 1000000; i ++) {
+      for (i = 0; i < rcc_ahb_frequency / 150; i ++) {
         asm("nop");
       }
       LED_ENABLE();
-      for (i = 0; i < 1000000; i ++) {
+      for (i = 0; i < rcc_ahb_frequency / 150; i ++) {
         asm("nop");
       }
     }
