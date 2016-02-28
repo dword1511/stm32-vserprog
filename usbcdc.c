@@ -223,13 +223,22 @@ static const char *usb_strings[] = {
 void usbcdc_init(void) {
   desig_get_unique_id_as_string(serial, UID_LEN);
 
+#ifdef STM32F0
+  usbd_dev = usbd_init(&st_usbfs_v2_usb_driver, &dev, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
+#else
   usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
+#endif /* STM32F0 */
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
   usbd_register_reset_callback(usbd_dev, cdcacm_reset);
 
   /* NOTE: Must be called after USB setup since this enables calling usbd_poll(). */
+#ifdef STM32F0
+  nvic_enable_irq(NVIC_USB_IRQ);
+#else
+  /* NVIC_USB_HP_CAN_TX_IRQ */
   nvic_enable_irq(NVIC_USB_LP_CAN_RX0_IRQ);
   nvic_enable_irq(NVIC_USB_WAKEUP_IRQ);
+#endif /* STM32F0 */
 }
 
 /* Application-level functions */
@@ -315,6 +324,10 @@ static void usb_int_relay(void) {
   usbd_poll(usbd_dev);
 }
 
+#ifdef STM32F0
+void usb_isr(void)
+__attribute__ ((alias ("usb_int_relay")));
+#else
 void usb_wakeup_isr(void)
 __attribute__ ((alias ("usb_int_relay")));
 
@@ -323,3 +336,4 @@ __attribute__ ((alias ("usb_int_relay")));
 
 void usb_lp_can_rx0_isr(void)
 __attribute__ ((alias ("usb_int_relay")));
+#endif /* STM32F0 */

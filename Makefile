@@ -94,6 +94,9 @@ distclean: clean
 flash: $(HEX)
 	stm32flash -w $< -v $(SERIAL)
 
+flash-dfu: $(BIN)
+	dfu-util -a 0 -d 0483:df11 -s 0x08000000:leave -D $(BIN)
+
 reboot:
 	stm32flash -g 0x0 $(SERIAL)
 

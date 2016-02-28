@@ -20,7 +20,13 @@ uint32_t spi_setup(uint32_t speed_hz) {
   uint32_t relspd;
 
   rcc_periph_clock_enable(RCC_SPI1);
+
+#ifdef STM32F0
+  rcc_periph_clock_enable(RCC_DMA);
+  uint32_t rcc_apb2_frequency = rcc_apb1_frequency; /* STM32F0x2 only has one APB. */
+#else
   rcc_periph_clock_enable(RCC_DMA1);
+#endif /* STM32F0 */
 
   /* SPI1 is on APB2 which runs at 72MHz. Assume f = f_PCLK / 2 = 36MHz (whereas datasheet says 18MHz max but reference manual has no such word). */
   /* Lowest available */
@@ -63,11 +69,19 @@ uint32_t spi_setup(uint32_t speed_hz) {
   }
 
   /* Configure GPIOs: SS = PA4, SCK = PA5, MISO = PA6, MOSI = PA7 */
-  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_SPI1_SCK | GPIO_SPI1_MOSI);
-  gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_SPI1_MISO);
-  gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_SPI1_NSS); /* SS is manual */
-  gpio_set(GPIOA, GPIO_SPI1_MISO);
-  gpio_set(GPIOA, GPIO_SPI1_NSS);
+#ifdef STM32F0
+  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_SPI1_SCK | GPIO_SPI1_MOSI);
+  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_SPI1_MISO);
+  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_SPI1_NSS); /* SS is manual */
+  gpio_set_af(GPIO_BANK_SPI1, GPIO_AF0, GPIO_SPI1_SCK | GPIO_SPI1_MOSI | GPIO_SPI1_MISO);
+  gpio_set_output_options(GPIO_BANK_SPI1, GPIO_OTYPE_PP, GPIO_OSPEED_HIGH, GPIO_SPI1_SCK | GPIO_SPI1_MOSI | GPIO_SPI1_NSS);
+#else
+  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_SPI1_SCK | GPIO_SPI1_MOSI);
+  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_SPI1_MISO);
+  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_SPI1_NSS); /* SS is manual */
+  gpio_set(GPIO_BANK_SPI1, GPIO_SPI1_MISO);
+#endif
+  gpio_set(GPIO_BANK_SPI1, GPIO_SPI1_NSS);
 
   /* Reset SPI, SPI_CR1 register cleared, SPI is disabled */
   spi_reset(SPI1);
@@ -79,7 +93,11 @@ uint32_t spi_setup(uint32_t speed_hz) {
    * Data frame format: 8-bit
    * Frame format: MSB First
    */
+#ifdef STM32F0
+  spi_init_master(SPI1, clkdiv, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE, SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_CRCL_8BIT, SPI_CR1_MSBFIRST);
+#else
   spi_init_master(SPI1, clkdiv, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE, SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
+#endif /* STM32F0 */
 
   /*
    * Set NSS management to software.
