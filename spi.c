@@ -95,6 +95,9 @@ uint32_t spi_setup(uint32_t speed_hz) {
    */
 #ifdef STM32F0
   spi_init_master(SPI1, clkdiv, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE, SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_CRCL_8BIT, SPI_CR1_MSBFIRST);
+  spi_set_data_size(SPI1, SPI_CR2_DS_8BIT);
+  spi_fifo_reception_threshold_8bit(SPI1);
+  spi_i2s_mode_spi_mode(SPI1);
 #else
   spi_init_master(SPI1, clkdiv, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE, SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
 #endif /* STM32F0 */
@@ -116,6 +119,7 @@ uint32_t spi_setup(uint32_t speed_hz) {
   spi_disable_rx_buffer_not_empty_interrupt(SPI1);
   spi_disable_tx_buffer_empty_interrupt(SPI1);
   spi_set_full_duplex_mode(SPI1);
+  spi_set_unidirectional_mode(SPI1);
 
   /* Enable SPI1 periph. */
   spi_enable(SPI1);
