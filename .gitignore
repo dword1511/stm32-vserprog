@@ -10,3 +10,4 @@
 *.out
 *.html
 board.h
+last_board.mk
