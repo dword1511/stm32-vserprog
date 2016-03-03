@@ -6,14 +6,14 @@
 ### Features
 * Fully opensource: now with [libopencm3](https://github.com/libopencm3/libopencm3) instead of STMicro's proprietary firmware library.
 * Affordable and simple hardware:
-  * A STM32F103C8T6 MCU, a 8MHz crystal, a 3.3V 1117 LDO, some 0805 capacitors, resistors and LEDs along with dedicated [PCB available on OSH Park](https://oshpark.com/shared_projects/08Rj6sSm)
-  * Or some general-purpose STM32F103 development boards, just with minor modifications in the source code to assign correct GPIO for USB D+ pullup and LEDs.
+  * A STM32F103C8T6 MCU, a 8MHz crystal, a 3.3V 1117 LDO, some 0805 capacitors, resistors and LEDs along with dedicated PCB available on OSH Park ([V2](https://oshpark.com/shared_projects/08Rj6sSm) or [V3](https://oshpark.com/shared_projects/vKn08YZG))
+  * Or some general-purpose STM32F103 development boards, just add a new header under "boards" folder to assign correct GPIO for USB D+ pullup and LEDs.
   * Hardware USB2.0 FullSpeed and efficient virtual COM port with USB CDC protocol eliminates the need of USB-to-UART bridges and the headache that comes with them, operates at any baud rates.
   * *Ironically, you will still have to buy or borrow a USB-to-UART bridge (not RS-232 but TTL level) to program the programmer itself,* unless you are using a STM32F042 device (support is in progress).
 * Hardware full-duplex SPI with DMA, multiple clock speeds available (default at the one closest to but under 10MHz), e.g. on STM32F103 targets:
   * 36MHz
   * 18MHz
-  * 9MHz *(Default)*
+  * 9MHz *(Default, for other boards the default is the one that is closest to 10MHz)*
   * 4.5MHz
   * 2.25MHz
   * 1.125MHz
@@ -104,7 +104,7 @@ The following assuming Linux platform, and the programmer appears as /dev/ttyACM
 
 * * *
 ### Problems?
-1. If encountered something like "Error: Cannot open serial port: Device or resource busy", please try to stop or remove modemmanager.
+1. If encountered something like "Error: Cannot open serial port: Device or resource busy", please try to stop or remove ModemManager.
 1. Check your wirings and flashrom version. Do not forget to power the flash chip itself.
 1. If you are sure it is caused by something wrong in the programmer's firmware,
    please [open a new ticket](https://github.com/dword1511/stm32-vserprog/issues) and provide details such as the board you are using and flashrom's output. I appreciate your feedback.
