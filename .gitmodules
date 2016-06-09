@@ -4,3 +4,4 @@
 [submodule "flashrom"]
 	path = flashrom
 	url = https://github.com/stefanct/flashrom.git
+	branch = stable
