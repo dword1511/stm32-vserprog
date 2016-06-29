@@ -111,11 +111,11 @@ distclean: clean
 	make -C libopencm3 clean
 	rm -f *~ *.swp *.hex
 
-flash: all
+flash: $(HEX)
 	stm32flash -w $< -v $(SERIAL)
 
-flash-dfu: all
-	dfu-util -a 0 -d 0483:df11 -s 0x08000000:leave -D $(BIN)
+flash-dfu: $(BIN)
+	dfu-util -a 0 -d 0483:df11 -s 0x08000000:leave -D $<
 
 reboot:
 	stm32flash -g 0x0 $(SERIAL)
