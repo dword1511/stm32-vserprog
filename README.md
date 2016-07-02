@@ -7,7 +7,7 @@
 * Fully opensource: now with [libopencm3](https://github.com/libopencm3/libopencm3) instead of STMicro's proprietary firmware library.
 * Affordable and simple hardware:
   * A STM32F103C8T6 MCU, a 8MHz crystal, a 3.3V 1117 LDO, some 0805 capacitors, resistors and LEDs along with dedicated PCB available on OSH Park ([V2](https://oshpark.com/shared_projects/08Rj6sSm) or [V3](https://oshpark.com/shared_projects/vKn08YZG))
-  * Or some general-purpose STM32F103 development boards, just add a new header under "boards" folder to assign correct GPIO for USB D+ pullup and LEDs.
+  * Or some general-purpose STM32F0/STM32F1 development boards, just add a new header under "boards" folder to assign correct GPIO for USB D+ pullup (STM32F1 only) and LEDs.
   * Hardware USB2.0 FullSpeed and efficient virtual COM port with USB CDC protocol eliminates the need of USB-to-UART bridges and the headache that comes with them, operates at any baud rates.
   * *Ironically, you will still have to buy or borrow a USB-to-UART bridge (not RS-232 but TTL level) to program the programmer itself,* unless you are using a STM32F042 device (support is in progress).
 * Hardware full-duplex SPI with DMA, multiple clock speeds available (default at the one closest to but under 10MHz), e.g. on STM32F103 targets:
