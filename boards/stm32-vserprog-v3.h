@@ -5,6 +5,11 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 
+/*
+ * Board definitions for STM32 VSerprog V3
+ * Eagle files are in the "pcb" folder.
+ */
+
 #define BOARD_USE_DEBUG_PINS_AS_GPIO true /* We have to disable JTAG / SWD to access PA13 */
 
 #define BOARD_RCC_LED                RCC_GPIOA

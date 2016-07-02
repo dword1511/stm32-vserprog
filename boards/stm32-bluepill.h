@@ -5,7 +5,15 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 
-#define BOARD_USE_DEBUG_PINS_AS_GPIO false /* We don't have to disable SWD to access Gpio's on these boards */
+/*
+ * Board definitions for "redpill" and "bluepill" boards
+ * These are low cost boards that are quite wide spread, and might come in many brands.
+ * Wiki:
+ *      http://wiki.stm32duino.com/index.php?title=Blue_Pill
+ *      http://wiki.stm32duino.com/index.php?title=Red_Pill
+ */
+
+#define BOARD_USE_DEBUG_PINS_AS_GPIO false /* We don't have to disable SWD to access GPIO's on these boards */
 
 #define BOARD_RCC_LED                RCC_GPIOC
 #define BOARD_PORT_LED               GPIOC

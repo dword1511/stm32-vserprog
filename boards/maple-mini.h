@@ -5,6 +5,15 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 
+/*
+ * Board definitions for Maple Mini
+ * Although originally developed by Leaf Labs, its compatible clones are once everywhere.
+ * WiKi:
+ *      http://leaflabs.com/docs/hardware/maple-mini.html (removed, see web archives)
+ * GitHub:
+ *      https://github.com/leaflabs/maplemini.git
+ */
+
 #define BOARD_USE_DEBUG_PINS_AS_GPIO false
 
 #define BOARD_RCC_LED                RCC_GPIOB

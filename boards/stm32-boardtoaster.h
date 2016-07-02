@@ -5,6 +5,14 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 
+/*
+ * Board definitions for STM32 Board Toast
+ * This is my spare-time project. It is a bread-board friendly minimal system for STM32F0x2.
+ * There are also some derivatives on OSHPark. Eagle file will be released upon request.
+ * OSHPark:
+ *      https://oshpark.com/shared_projects/HUtPmtCZ
+ */
+
 #define BOARD_USE_DEBUG_PINS_AS_GPIO false
 
 #define BOARD_RCC_LED                RCC_GPIOB
