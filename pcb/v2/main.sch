@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.4.0">
+<eagle version="7.7.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -63,57 +63,14 @@
 <layer number="98" name="Guide" color="6" fill="1" visible="yes" active="yes"/>
 <layer number="99" name="Invisibles" color="7" fill="1" visible="no" active="no"/>
 <layer number="100" name="Muster" color="7" fill="1" visible="no" active="no"/>
-<layer number="101" name="Patch_Top" color="12" fill="4" visible="yes" active="yes"/>
-<layer number="102" name="Vscore" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="103" name="origins2" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="104" name="Name" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="105" name="fp5" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="106" name="fp6" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="107" name="fp7" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="108" name="fp8" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="109" name="fp9" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="110" name="fp0" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="111" name="Text" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="112" name="2Restrict" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="113" name="ReferenceLS" color="7" fill="1" visible="no" active="no"/>
-<layer number="116" name="Patch_BOT" color="9" fill="4" visible="yes" active="yes"/>
 <layer number="118" name="Rect_Pads" color="7" fill="1" visible="no" active="no"/>
-<layer number="121" name="_tsilk" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="122" name="_bsilk" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="123" name="tTestmark" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="124" name="bTestmark" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="125" name="_tNames" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="126" name="_bNames" color="7" fill="1" visible="no" active="yes"/>
-<layer number="127" name="_tValues" color="7" fill="1" visible="no" active="yes"/>
-<layer number="128" name="_bValues" color="7" fill="1" visible="no" active="yes"/>
-<layer number="130" name="bLogo" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="131" name="tText" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="132" name="bMask" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="144" name="DrillLegend" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="150" name="Notes" color="7" fill="1" visible="no" active="yes"/>
-<layer number="151" name="HeatSink" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="152" name="_bDocu" color="7" fill="1" visible="no" active="yes"/>
 <layer number="153" name="FabDoc1" color="6" fill="1" visible="no" active="no"/>
 <layer number="154" name="FabDoc2" color="2" fill="1" visible="no" active="no"/>
 <layer number="155" name="FabDoc3" color="7" fill="15" visible="no" active="no"/>
-<layer number="199" name="Contour" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="200" name="200bmp" color="1" fill="10" visible="no" active="no"/>
 <layer number="201" name="201bmp" color="2" fill="1" visible="no" active="no"/>
 <layer number="202" name="202bmp" color="3" fill="1" visible="no" active="no"/>
-<layer number="203" name="203bmp" color="4" fill="10" visible="yes" active="yes"/>
-<layer number="204" name="204bmp" color="5" fill="10" visible="yes" active="yes"/>
-<layer number="205" name="205bmp" color="6" fill="10" visible="yes" active="yes"/>
-<layer number="206" name="206bmp" color="7" fill="10" visible="yes" active="yes"/>
-<layer number="207" name="207bmp" color="8" fill="10" visible="yes" active="yes"/>
-<layer number="208" name="208bmp" color="9" fill="10" visible="yes" active="yes"/>
-<layer number="209" name="209bmp" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="210" name="210bmp" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="211" name="211bmp" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="212" name="212bmp" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="213" name="213bmp" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="214" name="214bmp" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="215" name="215bmp" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="216" name="216bmp" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="217" name="217bmp" color="18" fill="1" visible="no" active="no"/>
 <layer number="218" name="218bmp" color="19" fill="1" visible="no" active="no"/>
 <layer number="219" name="219bmp" color="20" fill="1" visible="no" active="no"/>
@@ -122,14 +79,8 @@
 <layer number="222" name="222bmp" color="23" fill="1" visible="no" active="no"/>
 <layer number="223" name="223bmp" color="24" fill="1" visible="no" active="no"/>
 <layer number="224" name="224bmp" color="25" fill="1" visible="no" active="no"/>
-<layer number="231" name="Eagle3D_PG1" color="14" fill="1" visible="yes" active="yes"/>
-<layer number="232" name="Eagle3D_PG2" color="14" fill="2" visible="yes" active="yes"/>
-<layer number="233" name="Eagle3D_PG3" color="14" fill="4" visible="yes" active="yes"/>
-<layer number="248" name="Housing" color="7" fill="1" visible="no" active="yes"/>
-<layer number="249" name="Edge" color="7" fill="1" visible="no" active="yes"/>
 <layer number="250" name="Descript" color="3" fill="1" visible="no" active="no"/>
 <layer number="251" name="SMDround" color="12" fill="11" visible="no" active="no"/>
-<layer number="254" name="cooling" color="7" fill="1" visible="yes" active="yes"/>
 </layers>
 <schematic xreflabel="%F%N/%S.%C%R" xrefpart="/%S.%C%R">
 <libraries>
@@ -9369,52 +9320,52 @@ Source: www.kingbright.com</description>
 </class>
 </classes>
 <parts>
-<part name="Q1" library="crystal" deviceset="CRYSTAL" device="HC49S"/>
-<part name="C4" library="rcl" deviceset="C-EU" device="C0805K"/>
-<part name="C5" library="rcl" deviceset="C-EU" device="C0805K"/>
+<part name="Q1" library="crystal" deviceset="CRYSTAL" device="HC49S" value="8MHz"/>
+<part name="C4" library="rcl" deviceset="C-EU" device="C0805K" value="22p"/>
+<part name="C5" library="rcl" deviceset="C-EU" device="C0805K" value="22p"/>
 <part name="GND8" library="supply1" deviceset="GND" device=""/>
 <part name="GND9" library="supply1" deviceset="GND" device=""/>
-<part name="R5" library="rcl" deviceset="R-EU_" device="R0805"/>
+<part name="R5" library="rcl" deviceset="R-EU_" device="R0805" value="10k"/>
 <part name="GND5" library="supply1" deviceset="GND" device=""/>
 <part name="GND13" library="supply1" deviceset="GND" device=""/>
 <part name="+3V37" library="supply1" deviceset="+3V3" device=""/>
-<part name="C7" library="rcl" deviceset="C-EU" device="C0805K"/>
+<part name="C7" library="rcl" deviceset="C-EU" device="C0805K" value="0.1u"/>
 <part name="GND12" library="supply1" deviceset="GND" device=""/>
-<part name="C9" library="rcl" deviceset="C-EU" device="C0805K"/>
+<part name="C9" library="rcl" deviceset="C-EU" device="C0805K" value="10u"/>
 <part name="GND15" library="supply1" deviceset="GND" device=""/>
-<part name="C6" library="rcl" deviceset="C-EU" device="C0805K"/>
-<part name="C10" library="rcl" deviceset="C-EU" device="C0805K"/>
+<part name="C6" library="rcl" deviceset="C-EU" device="C0805K" value="10u"/>
+<part name="C10" library="rcl" deviceset="C-EU" device="C0805K" value="0.1u"/>
 <part name="GND10" library="supply1" deviceset="GND" device=""/>
 <part name="GND16" library="supply1" deviceset="GND" device=""/>
 <part name="P+2" library="supply1" deviceset="+5V" device=""/>
 <part name="P+3" library="supply1" deviceset="+5V" device=""/>
 <part name="GND3" library="supply1" deviceset="GND" device=""/>
-<part name="C8" library="rcl" deviceset="C-EU" device="C0805K"/>
+<part name="C8" library="rcl" deviceset="C-EU" device="C0805K" value="0.1u"/>
 <part name="GND14" library="supply1" deviceset="GND" device=""/>
 <part name="R3" library="rcl" deviceset="R-EU_" device="R0805" value="1k5"/>
-<part name="R2" library="rcl" deviceset="R-EU_" device="R0805"/>
-<part name="R4" library="rcl" deviceset="R-EU_" device="R0805"/>
+<part name="R2" library="rcl" deviceset="R-EU_" device="R0805" value="22"/>
+<part name="R4" library="rcl" deviceset="R-EU_" device="R0805" value="22"/>
 <part name="+3V31" library="supply1" deviceset="+3V3" device=""/>
-<part name="C2" library="rcl" deviceset="C-EU" device="C0805K"/>
-<part name="C3" library="rcl" deviceset="C-EU" device="C0805K"/>
+<part name="C2" library="rcl" deviceset="C-EU" device="C0805K" value="0.1u"/>
+<part name="C3" library="rcl" deviceset="C-EU" device="C0805K" value="0.1u"/>
 <part name="+3V34" library="supply1" deviceset="+3V3" device=""/>
 <part name="GND6" library="supply1" deviceset="GND" device=""/>
 <part name="IC1" library="atmel" deviceset="AT25*" device="P"/>
-<part name="C1" library="rcl" deviceset="C-EU" device="C0805K"/>
+<part name="C1" library="rcl" deviceset="C-EU" device="C0805K" value="0.1u"/>
 <part name="+3V32" library="supply1" deviceset="+3V3" device=""/>
 <part name="GND2" library="supply1" deviceset="GND" device=""/>
 <part name="+3V33" library="supply1" deviceset="+3V3" device=""/>
-<part name="R1" library="rcl" deviceset="R-EU_" device="R0805"/>
+<part name="R1" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
 <part name="GND1" library="supply1" deviceset="GND" device=""/>
 <part name="U2" library="NSC_By_element14_Batch_1.1" deviceset="LM1117MP-3.3" device=""/>
 <part name="X1" library="adafruit" deviceset="USB-A" device=""/>
 <part name="GND4" library="supply1" deviceset="GND" device=""/>
-<part name="R7" library="rcl" deviceset="R-EU_" device="R0805"/>
+<part name="R7" library="rcl" deviceset="R-EU_" device="R0805" value="10k"/>
 <part name="GND11" library="supply1" deviceset="GND" device=""/>
 <part name="U1" library="ST Microelctronics_By_element14_Batch_1" deviceset="STM32F103CBT6" device=""/>
 <part name="+3V35" library="supply1" deviceset="+3V3" device=""/>
 <part name="GND7" library="supply1" deviceset="GND" device=""/>
-<part name="R6" library="rcl" deviceset="R-EU_" device="R0805"/>
+<part name="R6" library="rcl" deviceset="R-EU_" device="R0805" value="200mA"/>
 <part name="LED1" library="led" deviceset="LED" device="CHIP-LED0805" value="IDLE"/>
 <part name="LED2" library="led" deviceset="LED" device="CHIP-LED0805" value="BUSY"/>
 <part name="R8" library="rcl" deviceset="R-EU_" device="R0805" value="DNP"/>
@@ -9483,8 +9434,8 @@ Source: www.kingbright.com</description>
 <instance part="R6" gate="G$1" x="38.1" y="-12.7" rot="MR0"/>
 <instance part="LED1" gate="G$1" x="-134.62" y="15.24"/>
 <instance part="LED2" gate="G$1" x="-134.62" y="2.54"/>
-<instance part="R8" gate="G$1" x="53.34" y="53.34"/>
-<instance part="+3V1" gate="G$1" x="60.96" y="58.42"/>
+<instance part="R8" gate="G$1" x="53.34" y="55.88"/>
+<instance part="+3V1" gate="G$1" x="60.96" y="60.96"/>
 <instance part="JP1" gate="A" x="-81.28" y="22.86" rot="R180"/>
 </instances>
 <busses>
@@ -9677,8 +9628,8 @@ Source: www.kingbright.com</description>
 <segment>
 <pinref part="R8" gate="G$1" pin="2"/>
 <pinref part="+3V1" gate="G$1" pin="+3V3"/>
-<wire x1="58.42" y1="53.34" x2="60.96" y2="53.34" width="0.1524" layer="91"/>
-<wire x1="60.96" y1="53.34" x2="60.96" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="58.42" y1="55.88" x2="60.96" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="60.96" y1="55.88" x2="60.96" y2="58.42" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$7" class="0">
@@ -9715,8 +9666,8 @@ Source: www.kingbright.com</description>
 <pinref part="R7" gate="G$1" pin="1"/>
 <pinref part="R8" gate="G$1" pin="1"/>
 <wire x1="45.72" y1="48.26" x2="27.94" y2="48.26" width="0.1524" layer="91"/>
-<wire x1="48.26" y1="53.34" x2="45.72" y2="53.34" width="0.1524" layer="91"/>
-<wire x1="45.72" y1="53.34" x2="45.72" y2="48.26" width="0.1524" layer="91"/>
+<wire x1="48.26" y1="55.88" x2="45.72" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="45.72" y1="55.88" x2="45.72" y2="48.26" width="0.1524" layer="91"/>
 <junction x="45.72" y="48.26"/>
 </segment>
 </net>
