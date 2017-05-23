@@ -65,8 +65,8 @@ CFLAGS  += -O3 -Wall -g
 #CFLAGS  += -Os -Wall -g
 #CFLAGS  += -Wextra -fprofile-generate -fprofile-use
 CFLAGS  += -fno-common -ffunction-sections -fdata-sections -funit-at-a-time
-CFLAGS  += -fgcse-sm -fgcse-las -fgcse-after-reload -funroll-loops -funswitch-loops
-#CFLAGS     += -funsafe-loop-optimizations -fipa-pta -flto
+CFLAGS  += -fgcse-sm -fgcse-las -fgcse-after-reload -funswitch-loops
+#CFLAGS  += -funroll-loops -funsafe-loop-optimizations -fipa-pta -flto
 CFLAGS  += $(ARCH_FLAGS) -Ilibopencm3/include/ $(EXTRA_CFLAGS)
 
 LIBC     = $(shell $(CC) $(CFLAGS) --print-file-name=libc.a)
@@ -88,7 +88,6 @@ $(DMP): $(ELF)
 
 %.hex: %.elf
 	$(OBJCOPY) -S -O ihex   $< $@
-	cp $@ $(PROGRAM)-$(BOARD).hex
 
 %.bin: %.elf
 	$(OBJCOPY) -S -O binary $< $@
