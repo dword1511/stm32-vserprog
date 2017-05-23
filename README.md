@@ -14,9 +14,9 @@
   just add a new header file under "boards" folder to assign correct GPIO for USB D+ pull-up (_STM32F1_ only) and LEDs.
   * Hardware USB 2.0 Full-Speed and efficient virtual COM port with USB CDC protocol operates at any baud rates,
   eliminates the need of USB-to-UART bridges and the headache that comes with them.
-  * *Ironically, you will still have to buy or borrow a USB-to-UART bridge (not RS-232 but TTL level) to program the programmer itself,*
+  * **Ironically, you will still have to buy or borrow a USB-to-UART bridge (not RS-232 but TTL level) to program the programmer itself,**
   unless you are using an _STM32F0x2_ device (which has USB ISP capability) or boards with embedded _ST-Link_ (see @FabianInostroza's fork).
-* Hardware full-duplex SPI with DMA, multiple clock speeds available (default at the one closest to but under 10MHz), e.g. on STM32F103 targets:
+* Hardware full-duplex SPI with DMA, multiple clock speeds available (default at the one closest to but under 10MHz), _e.g._ on STM32F103 targets:
   * 36MHz
   * 18MHz
   * 9MHz *(Default)*
