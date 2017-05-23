@@ -11,3 +11,6 @@
 *.html
 board.h
 last_board.mk
+
+# Somehow flashrom does not have a .gitignore.
+# However, adding rules here will not help.

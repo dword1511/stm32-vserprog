@@ -1,15 +1,18 @@
 # Makefile for stm32-vserprog
 # * Simply make: will make the firmware for default board.
-# * Override toochain: make CROSS=/path/to/arm-none-eabi
-# * Override UART for downloading: make SERIAL=/dev/ttyS1
+# * Override toochain: make CROSS=/path/to/arm-none-eabi-
+# * Override UART for downloading: make SERIAL=/dev/ttyS1 flash
 # * Override hardware config: make BOARD=some_board_in_boards_folder
+# * Test and benchmark: make PSERIAL=/dev/ttyACM0 SPISPD=50000000 test (Upon failure please check both programmer and flash)
 # * Build for GD32 variants with 12MHz crystal: make EXTRA_CFLAGS=-DGD32F103
 
 ###############################################################################
 
 PROGRAM  = stm32-vserprog
-CROSS   ?= arm-none-eabi
+CROSS   ?= arm-none-eabi-
 SERIAL  ?= /dev/ttyUSB0
+PSERIAL ?= /dev/ttyACM0
+SPISPD  ?= 1000000000
 OBJS     = vserprog.o \
            usbcdc.o \
            spi.o
@@ -18,11 +21,11 @@ DOCS     = README.html
 
 ###############################################################################
 
-CC       = $(CROSS)-gcc
-LD       = $(CROSS)-ld
-OBJCOPY  = $(CROSS)-objcopy
-OBJDUMP  = $(CROSS)-objdump
-SIZE     = $(CROSS)-size
+CC       = $(CROSS)gcc
+LD       = $(CROSS)ld
+OBJCOPY  = $(CROSS)objcopy
+OBJDUMP  = $(CROSS)objdump
+SIZE     = $(CROSS)size
 
 ELF      = $(PROGRAM).elf
 BIN      = $(PROGRAM).bin
@@ -61,18 +64,18 @@ endif
 CFLAGS  += -O3 -Wall -g
 #CFLAGS  += -Os -Wall -g
 #CFLAGS  += -Wextra -fprofile-generate -fprofile-use
-CFLAGS  += -fno-common -ffunction-sections -fdata-sections
+CFLAGS  += -fno-common -ffunction-sections -fdata-sections -funit-at-a-time
+CFLAGS  += -fgcse-sm -fgcse-las -fgcse-after-reload -funroll-loops -funswitch-loops
+#CFLAGS     += -funsafe-loop-optimizations -fipa-pta -flto
 CFLAGS  += $(ARCH_FLAGS) -Ilibopencm3/include/ $(EXTRA_CFLAGS)
 
-LIBM     = $(shell $(CC) $(CFLAGS) --print-file-name=libm.a)
 LIBC     = $(shell $(CC) $(CFLAGS) --print-file-name=libc.a)
-LIBNOSYS = $(shell $(CC) $(CFLAGS) --print-file-name=libnosys.a)
 LIBGCC   = $(shell $(CC) $(CFLAGS) --print-libgcc-file-name)
 
 # LDPATH is required for libopencm3 ld scripts to work.
 LDPATH   = libopencm3/lib/
 LDFLAGS += -L$(LDPATH) -T$(LDSCRIPT) -Map $(MAP) --gc-sections
-LDLIBS  += $(LIBOPENCM3) $(LIBC) $(LIBNOSYS) $(LIBGCC)
+LDLIBS  += $(LIBOPENCM3) $(LIBC) $(LIBGCC)
 
 firmware: $(LIBOPENCM3) $(BIN) $(HEX) $(DMP) size
 docs: $(DOCS)
@@ -101,15 +104,21 @@ $(LIBOPENCM3):
 	git submodule update --remote
 	CFLAGS="$(CFLAGS)" make -C libopencm3 $(OPENCM3_MK) V=1
 
+flashrom/flashrom:
+	git submodule init
+	git submodule update --remote
+	make -C flashrom
 
-.PHONY: clean distclean flash flash-dfu reboot size
+
+.PHONY: clean distclean flash flash-dfu reboot size test
 
 clean:
 	rm -f $(OBJS) $(DOCS) $(ELF) $(HEX) $(BIN) $(MAP) $(DMP) board.h last_board.mk
 
 distclean: clean
 	make -C libopencm3 clean
-	rm -f *~ *.swp *.hex
+	make -C flashrom distclean
+	rm -f *~ *.swp *.hex *.bin
 
 flash: $(HEX)
 	stm32flash -w $< -v $(SERIAL)
@@ -124,3 +133,46 @@ size: $(PROGRAM).elf
 	@echo ""
 	@$(SIZE) $(PROGRAM).elf
 	@echo ""
+
+# Erasing must come first, otherwise some sectors might be skipped.
+# After testing you may clear flash contents manually.
+test: flashrom/flashrom
+	@echo ""; \
+	FFLAGS="-p serprog:dev=$(PSERIAL),spispeed=$(SPISPD)"; \
+	echo "Detecting flash..."; \
+	FOUT=`command time -f 'XXTIMEXX %e' $< $${FFLAGS} 2>&1`; \
+	FPART=`echo "$${FOUT}" | grep "Found" | grep -oP '\".*\"' | sed -e 's/"//g'`; \
+	FSIZE=`echo "$${FOUT}" | grep -oP '[0-9]+ kB' | sed -e 's/ kB//g'`; \
+	PTIME=`echo "$${FOUT}" | grep 'XXTIMEXX' | sed -e 's/XXTIMEXX //g'`; \
+	echo "Generating test file..."; \
+	dd if=/dev/urandom iflag=fullblock of=rand.bin bs=1024 count=$${FSIZE} 2>/dev/null; \
+	echo "Erasing..."; \
+	ETIME=`command time -f 'XXTIMEXX %e' $< $${FFLAGS} -E 2>&1 >/dev/null | grep 'XXTIMEXX' | sed -e 's/XXTIMEXX //g'`; \
+	echo -n "Verifying... "; \
+	$< $${FFLAGS} -r compare.bin 1>/dev/null 2>/dev/null; \
+	STR_VERIFY=`sed 's/\xff//g' compare.bin | hd`; \
+	if test -z "$${STR_VERIFY}"; \
+	then echo "PASS"; \
+	else echo "FAIL"; \
+	exit 1; \
+	fi; \
+	echo "Writing..."; \
+	WTIME=`command time -f 'XXTIMEXX %e' $< $${FFLAGS} -w rand.bin 2>&1 >/dev/null | grep 'XXTIMEXX' | sed -e 's/XXTIMEXX //g'`; \
+	echo "Reading..."; \
+	RTIME=`command time -f 'XXTIMEXX %e' $< $${FFLAGS} -r compare.bin 2>&1 >/dev/null | grep 'XXTIMEXX' | sed -e 's/XXTIMEXX //g'`; \
+	echo -n "Comparing..."; \
+	CKSUMS=`md5sum rand.bin compare.bin | cut -d ' ' -f 1 | uniq | wc -l`; \
+	if test "$${CKSUMS}" = "1"; \
+	then echo "PASS"; \
+	else echo "FAIL"; \
+	fi; \
+	echo ""; \
+	echo "Flash type: $${FPART}"; \
+	echo "Flash size: $${FSIZE} KiB"; \
+	echo "SPI speed : $(SPISPD) Hz (requested)"; \
+	printf 'Probe     : %6.2fs\n' "$${PTIME}"; \
+	printf 'Erase     : %6.2fs\n' "$${ETIME}"; \
+	printf 'Write     : %6.2fs\n' "$${WTIME}"; \
+	printf 'Read      : %6.2fs\n' "$${RTIME}"; \
+	echo ""; \
+	rm rand.bin compare.bin;
