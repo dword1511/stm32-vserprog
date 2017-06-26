@@ -61,7 +61,7 @@ else
 	@make firmware
 endif
 
-CFLAGS  += -O3 -Wall -g
+CFLAGS  += -O3 -Wall -g -std=gnu99
 #CFLAGS  += -Os -Wall -g
 #CFLAGS  += -Wextra -fprofile-generate -fprofile-use
 CFLAGS  += -fno-common -ffunction-sections -fdata-sections -funit-at-a-time
