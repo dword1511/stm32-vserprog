@@ -1,7 +1,8 @@
 [submodule "libopencm3"]
 	path = libopencm3
 	url = https://github.com/libopencm3/libopencm3.git
+	branch = master
 [submodule "flashrom"]
 	path = flashrom
-	url = https://github.com/stefanct/flashrom.git
+	url = https://www.flashrom.org/git/flashrom.git
 	branch = staging
