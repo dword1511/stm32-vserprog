@@ -33,6 +33,13 @@ HEX      = $(PROGRAM).hex
 MAP      = $(PROGRAM).map
 DMP      = $(PROGRAM).out
 
+OS       = $(shell uname -s)
+ifeq ($(OS), Linux)
+    MAKE = make
+else
+    MAKE = gmake
+endif
+
 ifneq ($(wildcard last_board.mk),)
   include last_board.mk
 endif
@@ -42,23 +49,23 @@ endif
 
 all:
 ifndef BOARD
-	@echo "Please specify a board by using 'make BOARD=board'."
+	@echo "Please specify a board by using '${MAKE} BOARD=board'."
 	@echo "Available boards:"
 	@echo "===================="
 	@ls boards/*.h | cut -d '/' -f 2 | cut -d '.' -f 1
 else
   ifndef LAST_BOARD
 	@echo "First run, cleaning..."
-	@make clean
+	@${MAKE} clean
   else
     ifneq ($(LAST_BOARD), $(BOARD))
 	@echo "Board changed, cleaning..."
-	@make clean
+	@${MAKE} clean
     endif
   endif
 	@echo "LAST_BOARD = $(BOARD)" > last_board.mk
-	@ln -sfT "boards/$(BOARD).h" board.h
-	@make firmware
+	@ln -sf "boards/$(BOARD).h" board.h
+	@${MAKE} firmware
 endif
 
 CFLAGS  += -O3 -Wall -g -std=gnu99
@@ -101,12 +108,12 @@ $(DMP): $(ELF)
 $(LIBOPENCM3):
 	git submodule init
 	git submodule update --remote
-	CFLAGS="$(CFLAGS)" make -C libopencm3 $(OPENCM3_MK) V=1
+	CFLAGS="$(CFLAGS)" ${MAKE} -C libopencm3 $(OPENCM3_MK) V=1
 
 flashrom/flashrom:
 	git submodule init
 	git submodule update --remote
-	make -C flashrom
+	${MAKE} -C flashrom
 
 
 .PHONY: clean distclean flash flash-dfu reboot size test
@@ -115,8 +122,8 @@ clean:
 	rm -f $(OBJS) $(DOCS) $(ELF) $(HEX) $(BIN) $(MAP) $(DMP) board.h last_board.mk
 
 distclean: clean
-	make -C libopencm3 clean
-	make -C flashrom distclean
+	${MAKE} -C libopencm3 clean
+	${MAKE} -C flashrom distclean
 	rm -f *~ *.swp *.hex *.bin
 
 flash: $(HEX)
