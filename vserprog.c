@@ -3,6 +3,7 @@
 
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/usb/usbd.h>
 #ifdef STM32F0
@@ -360,6 +361,9 @@ static void rcc_clock_setup_in_hse_12mhz_out_120mhz(void) {
 int main(void) {
   uint32_t i;
 
+  iwdg_set_period_ms(250);
+  iwdg_start();
+
   rcc_periph_clock_enable(BOARD_RCC_LED);
   LED_ENABLE();
   LED_BUSY();
@@ -379,6 +383,7 @@ int main(void) {
   rcc_clock_setup_in_hse_8mhz_out_72mhz();
 #endif /* STM32F0 */
 #endif /* GD32F103 */
+  iwdg_reset();
 
   rcc_periph_clock_enable(RCC_GPIOA); /* For USB */
 
@@ -401,27 +406,33 @@ int main(void) {
   gpio_clear(BOARD_PORT_USB_PULLUP, BOARD_PIN_USB_PULLUP);
 #endif /* BOARD_USB_HIGH_IS_PULLUP */
 #endif /* STM32F0 */
+  iwdg_reset();
 
   usbcdc_init();
   spi_setup(SPI_DEFAULT_CLOCK);
 
   /* The loop. */
   while (true) {
+    iwdg_reset();
+
     /* Wait and blink if USB is not ready. */
     LED_IDLE();
     while (!usb_ready) {
       LED_DISABLE();
+      iwdg_reset();
       for (i = 0; i < rcc_ahb_frequency / 150; i ++) {
         asm("nop");
       }
+      iwdg_reset();
       LED_ENABLE();
       for (i = 0; i < rcc_ahb_frequency / 150; i ++) {
         asm("nop");
       }
+      iwdg_reset();
     }
 
     /* Actual thing */
-    /* TODO: we are blocked here, hence no knowledge about USB bet reset. */
+    /* TODO: we are blocked here, hence no knowledge about USB being reset. */
     handle_command(usbcdc_getc());
   }
 
@@ -434,6 +445,7 @@ static void signal_fault(void) {
   uint32_t i;
 
   while (true) {
+    iwdg_reset();
     LED_ENABLE();
     LED_BUSY();
     for (i = 0; i < 5000000; i ++) {

@@ -3,6 +3,7 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/usb/usbd.h>
 #include <libopencm3/usb/cdc.h>
+#include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/stm32/desig.h>
 
 #define UID_LEN  (12 * 2 + 1) /* 12-byte, each byte turnned into 2-byte hex, then '\0'. */
@@ -269,7 +270,9 @@ static uint8_t usbcdc_rxbuf_tail = 0; /* Indicates empty buffer */
 uint16_t usbcdc_fetch_packet(void) {
   uint16_t ret;
   /* Blocking read. Assume RX user buffer is empty. TODO: consider setting a timeout */
-  while (0 == (ret = usbd_ep_read_packet(usbd_dev, EP_IN, usbcdc_rxbuf, USBCDC_PKT_SIZE_DAT)));
+  while (0 == (ret = usbd_ep_read_packet(usbd_dev, EP_IN, usbcdc_rxbuf, USBCDC_PKT_SIZE_DAT))) {
+    iwdg_reset();
+  }
   usbcdc_rxbuf_head = 0;
   usbcdc_rxbuf_tail = ret;
   return ret;
