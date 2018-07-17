@@ -157,7 +157,7 @@ static const struct usb_config_descriptor config = {
 /* Buffer to be used for control requests. */
 static uint8_t usbd_control_buffer[128];
 
-static int cdcacm_control_request(usbd_device *usbd_dev, struct usb_setup_data *req, uint8_t **buf,
+static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_dev, struct usb_setup_data *req, uint8_t **buf,
     uint16_t *len, void (**complete)(usbd_device *usbd_dev, struct usb_setup_data *req)) {
   switch (req->bRequest) {
   case USB_CDC_REQ_SET_CONTROL_LINE_STATE: {
@@ -177,14 +177,14 @@ static int cdcacm_control_request(usbd_device *usbd_dev, struct usb_setup_data *
     notif->wLength       = 2;
     local_buf[8]         = req->wValue & 3;
     local_buf[9]         = 0;
-    return 1;
+    return USBD_REQ_HANDLED;
   }
   case USB_CDC_REQ_SET_LINE_CODING:
     if (*len < sizeof(struct usb_cdc_line_coding))
-      return 0;
-    return 1;
+      return USBD_REQ_NOTSUPP;
+    return USBD_REQ_HANDLED;
   }
-  return 0;
+  return USBD_REQ_NOTSUPP;
 }
 
 volatile bool usb_ready = false;

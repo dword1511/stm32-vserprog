@@ -26,6 +26,7 @@ LD       = $(CROSS)ld
 OBJCOPY  = $(CROSS)objcopy
 OBJDUMP  = $(CROSS)objdump
 SIZE     = $(CROSS)size
+NM       = $(CROSS)nm
 
 ELF      = $(PROGRAM).elf
 BIN      = $(PROGRAM).bin
@@ -42,23 +43,23 @@ endif
 
 all:
 ifndef BOARD
-	@echo "Please specify a board by using 'make BOARD=board'."
+	@echo "Please specify a board by using '$(MAKE) BOARD=board'."
 	@echo "Available boards:"
 	@echo "===================="
 	@ls boards/*.h | cut -d '/' -f 2 | cut -d '.' -f 1
 else
   ifndef LAST_BOARD
 	@echo "First run, cleaning..."
-	@make clean
+	@$(MAKE) clean
   else
     ifneq ($(LAST_BOARD), $(BOARD))
 	@echo "Board changed, cleaning..."
-	@make clean
+	@$(MAKE) clean
     endif
   endif
 	@echo "LAST_BOARD = $(BOARD)" > last_board.mk
 	@ln -sfT "boards/$(BOARD).h" board.h
-	@make firmware
+	@$(MAKE) firmware
 endif
 
 CFLAGS  += -O3 -Wall -g -std=gnu99
@@ -77,10 +78,13 @@ LDPATH   = libopencm3/lib/
 LDFLAGS += -L$(LDPATH) -T$(LDSCRIPT) -Map $(MAP) --gc-sections
 LDLIBS  += $(LIBOPENCM3) $(LIBC) $(LIBGCC)
 
-firmware: $(LIBOPENCM3) $(BIN) $(HEX) $(DMP) size
+
+.PHONY: firmware docs clean distclean flash flash-dfu reboot size symbols test
+
+firmware: $(BIN) $(HEX) $(DMP) size
 docs: $(DOCS)
 
-$(ELF): $(LDSCRIPT) $(OBJS)
+$(ELF): $(LDSCRIPT) $(OBJS) $(LIBOPENCM3)
 	$(LD) -o $@ $(LDFLAGS) $(OBJS) $(LDLIBS)
 
 $(DMP): $(ELF)
@@ -92,7 +96,7 @@ $(DMP): $(ELF)
 %.bin: %.elf
 	$(OBJCOPY) -S -O binary $< $@
 
-%.o: %.c board.h
+%.o: %.c board.h $(LIBOPENCM3)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.html: %.md
@@ -100,23 +104,20 @@ $(DMP): $(ELF)
 
 $(LIBOPENCM3):
 	git submodule init
-	git submodule update --remote
-	CFLAGS="$(CFLAGS)" make -C libopencm3 $(OPENCM3_MK) V=1
+	git submodule update --init
+	CFLAGS="$(CFLAGS)" $(MAKE) -C libopencm3 $(OPENCM3_MK) V=1
 
 flashrom/flashrom:
 	git submodule init
-	git submodule update --remote
-	make -C flashrom
-
-
-.PHONY: clean distclean flash flash-dfu reboot size test
+	git submodule update --init
+	$(MAKE) -C flashrom
 
 clean:
 	rm -f $(OBJS) $(DOCS) $(ELF) $(HEX) $(BIN) $(MAP) $(DMP) board.h last_board.mk
 
 distclean: clean
-	make -C libopencm3 clean
-	make -C flashrom distclean
+	$(MAKE) -C libopencm3 clean
+	$(MAKE) -C flashrom distclean
 	rm -f *~ *.swp *.hex *.bin
 
 flash: $(HEX)
@@ -132,6 +133,10 @@ size: $(PROGRAM).elf
 	@echo ""
 	@$(SIZE) $(PROGRAM).elf
 	@echo ""
+
+symbols: $(ELF)
+	@$(NM) --demangle --size-sort -S $< | grep -v ' [bB] '
+
 
 # Erasing must come first, otherwise some sectors might be skipped.
 # After testing you may clear flash contents manually.
