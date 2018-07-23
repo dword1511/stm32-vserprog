@@ -71,7 +71,7 @@
   Finally, type:
 
    ```bash
-   make BOARD=stm32-vserprog-v2 flash
+   make BOARD=stm32-vserprog-v2 flash-uart
    ```
 1. Done!
 

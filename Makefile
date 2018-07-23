@@ -62,7 +62,7 @@ else
 	@$(MAKE) firmware
 endif
 
-CFLAGS  += -O3 -Wall -g -std=gnu99
+CFLAGS  += -O3 -Wall -g3 -gdwarf -std=gnu99
 #CFLAGS  += -Os -Wall -g
 #CFLAGS  += -Wextra -fprofile-generate -fprofile-use
 CFLAGS  += -fno-common -ffunction-sections -fdata-sections -funit-at-a-time
@@ -120,11 +120,14 @@ distclean: clean
 	$(MAKE) -C flashrom distclean
 	rm -f *~ *.swp *.hex *.bin
 
-flash: $(HEX)
+flash-uart: $(HEX)
 	stm32flash -w $< -v $(SERIAL)
 
 flash-dfu: $(BIN)
 	dfu-util -a 0 -d 0483:df11 -s 0x08000000:leave -D $<
+
+flash-stlink: $(HEX)
+	st-flash --reset --format ihex write $<
 
 reboot:
 	stm32flash -g 0x0 $(SERIAL)
