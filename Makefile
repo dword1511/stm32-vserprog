@@ -34,6 +34,14 @@ HEX      = $(PROGRAM).hex
 MAP      = $(PROGRAM).map
 DMP      = $(PROGRAM).out
 
+# I suppose this variable is automatically setup by make/gmake
+#OS       = $(shell uname -s)
+#ifeq ($(OS), Linux)
+#    MAKE = make
+#else
+#    MAKE = gmake
+#endif
+
 ifneq ($(wildcard last_board.mk),)
   include last_board.mk
 endif
