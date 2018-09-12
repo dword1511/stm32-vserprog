@@ -193,6 +193,7 @@ static void spi_dma_read(uint16_t len) {
   spi_enable_tx_dma(SPI1);
 }
 
+#ifdef GD32F103
 /* Old CPU copying code */
 static void spi_copy_to_usb(uint32_t len) {
   while (len) {
@@ -210,7 +211,6 @@ static void spi_copy_from_usb(uint32_t len) {
   }
 }
 
-#ifdef GD32F103
 /* FIXME: Currently SPI does not work on GD32 under any clock... */
 void spi_bulk_read(uint32_t rlen) {
   spi_copy_to_usb(rlen);
