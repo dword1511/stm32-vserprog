@@ -276,7 +276,7 @@ static void rcc_clock_setup_in_hse_12mhz_out_96mhz(void) {
   /* GD32 has 0-wait-state flash, do not touch anything! */
 
   /*
-   * Set the PLL multiplication factor to 10.
+   * Set the PLL multiplication factor to 8.
    * 12MHz (external) * 8 (multiplier) = 96MHz
    */
   rcc_set_pll_multiplication_factor(RCC_CFGR_PLLMUL_PLL_CLK_MUL8);

@@ -149,7 +149,7 @@ static void spi_dma_write(uint16_t len, char *buf) {
   dma_set_memory_address(DMA1, SPI_DMA_RX_CH, (uint32_t)(&tmp));
   dma_set_number_of_data(DMA1, SPI_DMA_RX_CH, len);
   dma_set_read_from_peripheral(DMA1, SPI_DMA_RX_CH);
-  dma_disable_memory_increment_mode(DMA1, SPI_DMA_RX_CH); /* Do not polute cache */
+  dma_disable_memory_increment_mode(DMA1, SPI_DMA_RX_CH); /* Do not pollute cache */
   dma_set_peripheral_size(DMA1, SPI_DMA_RX_CH, DMA_CCR_PSIZE_8BIT);
   dma_set_memory_size(DMA1, SPI_DMA_RX_CH, DMA_CCR_MSIZE_8BIT);
   dma_set_priority(DMA1, SPI_DMA_RX_CH, DMA_CCR_PL_VERY_HIGH);
@@ -182,7 +182,7 @@ static void spi_dma_read(uint16_t len) {
   dma_set_memory_address(DMA1, SPI_DMA_TX_CH, (uint32_t)(&tmp));
   dma_set_number_of_data(DMA1, SPI_DMA_TX_CH, len);
   dma_set_read_from_memory(DMA1, SPI_DMA_TX_CH);
-  dma_disable_memory_increment_mode(DMA1, SPI_DMA_TX_CH); /* Do not polute cache */
+  dma_disable_memory_increment_mode(DMA1, SPI_DMA_TX_CH); /* Do not pollute cache */
   dma_set_peripheral_size(DMA1, SPI_DMA_TX_CH, DMA_CCR_PSIZE_8BIT);
   dma_set_memory_size(DMA1, SPI_DMA_TX_CH, DMA_CCR_MSIZE_8BIT);
   dma_set_priority(DMA1, SPI_DMA_TX_CH, DMA_CCR_PL_HIGH);
@@ -225,7 +225,7 @@ void spi_bulk_read(uint32_t rlen) {
     spi_dma_read(USBCDC_PKT_SIZE_DAT);
     rlen -= USBCDC_PKT_SIZE_DAT;
 
-    while (unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF))); /* It is liklely, but we want to exit loop with low latency. */
+    while (unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF))); /* It is likely, but we want to exit loop with low latency. */
     dma_clear_interrupt_flags(DMA1, SPI_DMA_RX_CH, DMA_TCIF);
     spi_disable_rx_dma(SPI1);
     spi_disable_tx_dma(SPI1);
@@ -262,7 +262,7 @@ void spi_bulk_write(uint32_t slen) {
     slen -= urlen;
 
     /* Always check RX flag to avoid leftovers in SPI_DR, which messes data up. */
-    while (unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF))); /* It is liklely, but we want to exit loop with low latency. */
+    while (unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF))); /* It is likely, but we want to exit loop with low latency. */
     dma_clear_interrupt_flags(DMA1, SPI_DMA_RX_CH, DMA_TCIF);
     spi_disable_rx_dma(SPI1);
     spi_disable_tx_dma(SPI1);
@@ -276,7 +276,7 @@ void spi_bulk_write(uint32_t slen) {
     spi_dma_write(urlen, usbcdc_rxbuf);
     slen -= urlen;
 
-    while (unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF))); /* It is liklely, but we want to exit loop with low latency. */
+    while (unlikely(!dma_get_interrupt_flag(DMA1, SPI_DMA_RX_CH, DMA_TCIF))); /* It is likely, but we want to exit loop with low latency. */
     dma_clear_interrupt_flags(DMA1, SPI_DMA_RX_CH, DMA_TCIF);
     spi_disable_rx_dma(SPI1);
     spi_disable_tx_dma(SPI1);
