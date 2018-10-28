@@ -29,7 +29,8 @@
   (1 << S_CMD_SYNCNOP)   | \
   (1 << S_CMD_O_SPIOP)   | \
   (1 << S_CMD_S_BUSTYPE) | \
-  (1 << S_CMD_S_SPI_FREQ)  \
+  (1 << S_CMD_S_SPI_FREQ)| \
+  (1 << S_CMD_S_PIN_STATE) \
 )
 
 #ifdef STM32F0
@@ -231,7 +232,11 @@ void handle_command(unsigned char command) {
     }
 
     case S_CMD_S_PIN_STATE: {
-      // TODO: OE
+      if( usbcdc_getc() )
+          spi_enable_pins();
+      else
+          spi_disable_pins();
+      usbcdc_putc(S_ACK);
       break;
     }
 

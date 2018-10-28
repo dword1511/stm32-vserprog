@@ -15,6 +15,32 @@
 
 static uint8_t dma_rxbuf[USBCDC_PKT_SIZE_DAT];
 
+void spi_disable_pins(void) {
+  /* Configure GPIOs: SS = PA4, SCK = PA5, MISO = PA6, MOSI = PA7 */
+#ifdef STM32F0
+  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_SPI1_SCK | GPIO_SPI1_MOSI | GPIO_SPI1_MISO | GPIO_SPI1_NSS);
+#else
+  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_SPI1_SCK | GPIO_SPI1_MOSI | GPIO_SPI1_MISO | GPIO_SPI1_NSS);
+#endif
+}
+
+void spi_enable_pins(void) {
+  /* Configure GPIOs: SS = PA4, SCK = PA5, MISO = PA6, MOSI = PA7 */
+#ifdef STM32F0
+  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_SPI1_SCK | GPIO_SPI1_MOSI);
+  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_SPI1_MISO);
+  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_SPI1_NSS); /* SS is manual */
+  gpio_set_af(GPIO_BANK_SPI1, GPIO_AF0, GPIO_SPI1_SCK | GPIO_SPI1_MOSI | GPIO_SPI1_MISO);
+  gpio_set_output_options(GPIO_BANK_SPI1, GPIO_OTYPE_PP, GPIO_OSPEED_HIGH, GPIO_SPI1_SCK | GPIO_SPI1_MOSI | GPIO_SPI1_NSS);
+#else
+  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_SPI1_SCK | GPIO_SPI1_MOSI);
+  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_SPI1_MISO);
+  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_SPI1_NSS); /* SS is manual */
+  gpio_set(GPIO_BANK_SPI1, GPIO_SPI1_MISO);
+#endif
+  gpio_set(GPIO_BANK_SPI1, GPIO_SPI1_NSS);
+}
+
 uint32_t spi_setup(uint32_t speed_hz) {
   uint32_t clkdiv;
   uint32_t relspd;
@@ -68,20 +94,7 @@ uint32_t spi_setup(uint32_t speed_hz) {
     relspd = rcc_apb2_frequency / 2;
   }
 
-  /* Configure GPIOs: SS = PA4, SCK = PA5, MISO = PA6, MOSI = PA7 */
-#ifdef STM32F0
-  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_SPI1_SCK | GPIO_SPI1_MOSI);
-  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_SPI1_MISO);
-  gpio_mode_setup(GPIO_BANK_SPI1, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_SPI1_NSS); /* SS is manual */
-  gpio_set_af(GPIO_BANK_SPI1, GPIO_AF0, GPIO_SPI1_SCK | GPIO_SPI1_MOSI | GPIO_SPI1_MISO);
-  gpio_set_output_options(GPIO_BANK_SPI1, GPIO_OTYPE_PP, GPIO_OSPEED_HIGH, GPIO_SPI1_SCK | GPIO_SPI1_MOSI | GPIO_SPI1_NSS);
-#else
-  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_SPI1_SCK | GPIO_SPI1_MOSI);
-  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_SPI1_MISO);
-  gpio_set_mode(GPIO_BANK_SPI1, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO_SPI1_NSS); /* SS is manual */
-  gpio_set(GPIO_BANK_SPI1, GPIO_SPI1_MISO);
-#endif
-  gpio_set(GPIO_BANK_SPI1, GPIO_SPI1_NSS);
+  spi_enable_pins();
 
   /* Reset SPI, SPI_CR1 register cleared, SPI is disabled */
   spi_reset(SPI1);
