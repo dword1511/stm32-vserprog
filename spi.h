@@ -23,5 +23,7 @@
 uint32_t spi_setup(uint32_t speed_hz);
 void spi_bulk_read(uint32_t rlen);
 void spi_bulk_write(uint32_t slen);
+void spi_enable_pins(void);
+void spi_disable_pins(void);
 
 #endif /* __STM32_VSERPOG_SPI_H__ */
