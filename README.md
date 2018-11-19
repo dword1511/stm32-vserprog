@@ -52,6 +52,8 @@
    ```bash
    sudo apt-get install stm32flash gcc-arm-none-eabi
    ```
+  
+  NOTE: some systems may require installing `newlib` (_e.g._ `libnewlib-arm-none-eabi`) manually. See #27.
 
 1. Clone and compile.
 
