@@ -53,7 +53,7 @@
    sudo apt-get install stm32flash gcc-arm-none-eabi
    ```
   
-  NOTE: some systems may require installing `newlib` (_e.g._ `libnewlib-arm-none-eabi`) manually. See #27.
+  NOTE: some systems may require installing `newlib` (_e.g._ `libnewlib-arm-none-eabi`) manually. See [#27](https://github.com/dword1511/stm32-vserprog/issues/27).
 
 1. Clone and compile.
 
