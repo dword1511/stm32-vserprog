@@ -1,3 +1,6 @@
+[v4]
+ * Replaced the dip-8 package base with the zif-socket-16 package lock seat.
+
 [v3]
  * Made board narrower
  * Changed MCU orientation on the board
