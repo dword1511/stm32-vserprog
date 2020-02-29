@@ -113,7 +113,7 @@ $(DMP): $(ELF)
 $(LIBOPENCM3):
 	git submodule init
 	git submodule update --init
-	CFLAGS="$(CFLAGS)" $(MAKE) -C libopencm3 $(OPENCM3_MK) PREFIX=$(patsubst %-,%,$(CROSS)) V=1
+	CFLAGS="$(CFLAGS)" $(MAKE) -C libopencm3 $(OPENCM3_MK) PREFIX=$(patsubst %,%,$(CROSS)) V=1
 
 flashrom/flashrom:
 	git submodule init
