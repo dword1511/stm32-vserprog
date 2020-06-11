@@ -1,0 +1,13 @@
+language: c
+dist: xenial
+addons:
+  apt:
+    packages:
+      - gcc-arm-none-eabi
+      - libnewlib-arm-none-eabi
+
+script:
+  - for board in $(ls boards/*.h | cut -d/ -f2 | cut -d. -f1); do
+      make BOARD="$board" || return 1;
+    done
+  - make distclean
