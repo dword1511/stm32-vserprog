@@ -407,6 +407,10 @@ int main(void) {
 #endif /* STM32F0 */
 
   usbcdc_init();
+#ifdef HAS_BOARD_INIT
+  board_init();
+#endif
+
   spi_setup(SPI_DEFAULT_CLOCK);
 
   /* The loop. */
