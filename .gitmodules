@@ -4,5 +4,5 @@
 	branch = master
 [submodule "flashrom"]
 	path = flashrom
-	url = https://www.flashrom.org/git/flashrom.git
+	url = https://github.com/flashrom/flashrom.git
 	branch = staging
