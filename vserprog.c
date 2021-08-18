@@ -249,11 +249,69 @@ void handle_command(unsigned char command) {
 }
 
 #ifdef GD32F103
-#define  RCC_GCFGR_ADCPS_DIV12  ((uint32_t)0x10004000)
-#define  RCC_GCFGR_ADCPS_DIV16  ((uint32_t)0x1000C000)
-#define  RCC_GCFGR_USBPS_Div2_5 ((uint32_t)0x00800000)
-#define  RCC_GCFGR_USBPS_Div2   ((uint32_t)0x00C00000)
+#define  RCC_GCFGR_ADCPS_BIT_2  (1UL << 28)
+#define  RCC_GCFGR_USBPS_DIV2   (3UL << 22)
+#define  RCC_GCFGR_PLLMF_BIT_4  (1UL << 27)
+/* GD32 extra PLL bit flip turns MUL9 (0b00111) into MUL24 (0b10111) */
+#define	 RCC_CFGR_PLLMUL_PLL_CLK_MUL24	RCC_CFGR_PLLMUL_PLL_CLK_MUL9
 
+#ifdef GD32F103_8MHZ
+static void rcc_clock_setup_in_hse_8mhz_out_96mhz(void) {
+	/* Enable internal high-speed oscillator. */
+	rcc_osc_on(RCC_HSI);
+	rcc_wait_for_osc_ready(RCC_HSI);
+
+	/* Select HSI as SYSCLK source. */
+	rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_HSICLK);
+
+	/* Enable external high-speed oscillator 8MHz. */
+	rcc_osc_on(RCC_HSE);
+	rcc_wait_for_osc_ready(RCC_HSE);
+	rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_HSECLK);
+
+  /*
+	 * Set prescalers for AHB, ADC, ABP1, ABP2.
+	 * Do this before touching the PLL. For reasons.
+	 */
+	rcc_set_hpre(RCC_CFGR_HPRE_SYSCLK_NODIV);    /* Set. 96MHz Max. 108MHz */
+	rcc_set_adcpre(RCC_CFGR_ADCPRE_PCLK2_DIV8);  /* Set. 12MHz Max. 14MHz */
+	rcc_set_ppre1(RCC_CFGR_PPRE1_HCLK_DIV2);     /* Set. 48MHz Max. 54MHz */
+	rcc_set_ppre2(RCC_CFGR_PPRE2_HCLK_NODIV);    /* Set. 96MHz Max. 108MHz */
+  RCC_CFGR |= RCC_GCFGR_USBPS_DIV2;            /* USB Set. 48MHz  Max. 48MHz  */
+
+
+  /* GD32 has 0-wait-state flash, do not touch anything! */
+
+	/*
+	 * Set the PLL multiplication factor to 24
+	 * 8MHz (external) * 24 (multiplier) / 2 (pllprediv) = 96MHz
+	 */
+  /* GD32 extra PLL bit flip turns MUL9 (0b00111) into MUL24 (0b10111) */
+	rcc_set_pll_multiplication_factor(RCC_CFGR_PLLMUL_PLL_CLK_MUL24);
+  RCC_CFGR |= RCC_GCFGR_PLLMF_BIT_4;
+
+	/* Select HSE as PLL source. */
+	rcc_set_pll_source(RCC_CFGR_PLLSRC_HSE_CLK);
+
+	/*
+	 * External frequency divided/2 before entering PLL
+	 * (only valid/needed for HSE on GD32. Don't ask me why...).
+	 */
+	rcc_set_pllxtpre(RCC_CFGR_PLLXTPRE_HSE_CLK_DIV2);
+
+	/* Enable PLL oscillator and wait for it to stabilize. */
+	rcc_osc_on(RCC_PLL);
+	rcc_wait_for_osc_ready(RCC_PLL);
+
+	/* Select PLL as SYSCLK source. */
+	rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_PLLCLK);
+
+	/* Set the peripheral clock frequencies used */
+	rcc_ahb_frequency = 96000000;
+	rcc_apb1_frequency = 48000000;
+	rcc_apb2_frequency = 96000000;
+}
+#else
 static void rcc_clock_setup_in_hse_12mhz_out_96mhz(void) {
   /* Enable internal high-speed oscillator. */
   rcc_osc_on(RCC_HSI);
@@ -275,24 +333,24 @@ static void rcc_clock_setup_in_hse_12mhz_out_96mhz(void) {
   rcc_set_adcpre(RCC_CFGR_ADCPRE_PCLK2_DIV8); /* Set. 12MHz Max. 14MHz  */
   rcc_set_ppre1(RCC_CFGR_PPRE1_HCLK_DIV2);    /* Set. 48MHz Max. 54MHz  */
   rcc_set_ppre2(RCC_CFGR_PPRE2_HCLK_NODIV);   /* Set. 96MHz Max. 108MHz */
-  RCC_CFGR |= RCC_GCFGR_USBPS_Div2;           /* USB Set. 48MHz  Max. 48MHz  */
+  RCC_CFGR |= RCC_GCFGR_USBPS_DIV2;           /* USB Set. 48MHz  Max. 48MHz  */
 
   /* GD32 has 0-wait-state flash, do not touch anything! */
 
   /*
    * Set the PLL multiplication factor to 8.
-   * 12MHz (external) * 8 (multiplier) = 96MHz
+   * 12MHz (external) / 2 (prescale) * 16 (multiplier) = 96MHz
    */
-  rcc_set_pll_multiplication_factor(RCC_CFGR_PLLMUL_PLL_CLK_MUL8);
+  rcc_set_pll_multiplication_factor(RCC_CFGR_PLLMUL_PLL_CLK_MUL16);
 
   /* Select HSE as PLL source. */
   rcc_set_pll_source(RCC_CFGR_PLLSRC_HSE_CLK);
 
-  /*
-   * External frequency undivided before entering PLL
-   * (only valid/needed for HSE).
-   */
-  rcc_set_pllxtpre(RCC_CFGR_PLLXTPRE_HSE_CLK);
+	/*
+	 * External frequency divided/2 before entering PLL
+	 * (only valid/needed for HSE on GD32. Don't ask me why...).
+	 */
+  rcc_set_pllxtpre(RCC_CFGR_PLLXTPRE_HSE_CLK_DIV2);
 
   /* Enable PLL oscillator and wait for it to stabilize. */
   rcc_osc_on(RCC_PLL);
@@ -306,59 +364,7 @@ static void rcc_clock_setup_in_hse_12mhz_out_96mhz(void) {
   rcc_apb1_frequency = 48000000;
   rcc_apb2_frequency = 96000000;
 }
-
-static void rcc_clock_setup_in_hse_12mhz_out_120mhz(void) {
-  /* Enable internal high-speed oscillator. */
-  rcc_osc_on(RCC_HSI);
-  rcc_wait_for_osc_ready(RCC_HSI);
-
-  /* Select HSI as SYSCLK source. */
-  rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_HSICLK);
-
-  /* Enable external high-speed oscillator 12MHz. */
-  rcc_osc_on(RCC_HSE);
-  rcc_wait_for_osc_ready(RCC_HSE);
-  rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_HSECLK);
-
-  /*
-   * Set prescalers for AHB, ADC, ABP1, ABP2.
-   * Do this before touching the PLL
-   */
-  rcc_set_hpre(RCC_CFGR_HPRE_SYSCLK_NODIV);      /* Set. 120MHz Max. 108MHz */
-  RCC_CFGR = (RCC_CFGR & ~RCC_CFGR_ADCPRE) | RCC_GCFGR_ADCPS_DIV12; /* ADC Set. 10MHz  Max. 14MHz  */
-  rcc_set_ppre1(RCC_CFGR_PPRE1_HCLK_DIV2);       /* Set. 60MHz  Max. 54MHz  */
-  rcc_set_ppre2(RCC_CFGR_PPRE2_HCLK_NODIV);      /* Set. 120MHz Max. 108MHz */
-  RCC_CFGR |= RCC_GCFGR_USBPS_Div2_5;            /* USB Set. 48MHz  Max. 48MHz  */
-
-  /* GD32 has 0-wait-state flash, do not touch anything! */
-
-  /*
-   * Set the PLL multiplication factor to 10.
-   * 12MHz (external) * 10 (multiplier) = 120MHz
-   */
-  rcc_set_pll_multiplication_factor(RCC_CFGR_PLLMUL_PLL_CLK_MUL10);
-
-  /* Select HSE as PLL source. */
-  rcc_set_pll_source(RCC_CFGR_PLLSRC_HSE_CLK);
-
-  /*
-   * External frequency undivided before entering PLL
-   * (only valid/needed for HSE).
-   */
-  rcc_set_pllxtpre(RCC_CFGR_PLLXTPRE_HSE_CLK);
-
-  /* Enable PLL oscillator and wait for it to stabilize. */
-  rcc_osc_on(RCC_PLL);
-  rcc_wait_for_osc_ready(RCC_PLL);
-
-  /* Select PLL as SYSCLK source. */
-  rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_PLLCLK);
-
-  /* Set the peripheral clock frequencies used */
-  rcc_ahb_frequency  = 120000000;
-  rcc_apb1_frequency = 60000000;
-  rcc_apb2_frequency = 120000000;
-}
+#endif /* GD32F103_8MHZ */
 #endif /* GD32F103 */
 
 int main(void) {
@@ -370,7 +376,11 @@ int main(void) {
 
 /* Setup clock accordingly */
 #ifdef GD32F103
-  rcc_clock_setup_in_hse_12mhz_out_120mhz();
+#ifdef GD32F103_8MHZ
+  rcc_clock_setup_in_hse_8mhz_out_96mhz();
+#else
+  rcc_clock_setup_in_hse_12mhz_out_96mhz();
+#endif /* GD32F103_8MHZ */
 #else
 #ifdef STM32F0
   rcc_clock_setup_in_hsi48_out_48mhz();
