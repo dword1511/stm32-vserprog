@@ -13,7 +13,7 @@
 #define BOARD_RCC_LED                RCC_GPIOB
 #define BOARD_PORT_LED               GPIOB
 #define BOARD_PIN_LED                GPIO7
-#define BOARD_LED_HIGH_IS_BUSY       true
+#define BOARD_LED_HIGH_IS_BUSY       false
 
 #define BOARD_RCC_USB_PULLUP         RCC_GPIOB
 #define BOARD_PORT_USB_PULLUP        GPIOB
