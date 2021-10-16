@@ -49,7 +49,6 @@ uint32_t spi_setup(uint32_t speed_hz) {
 
 #ifdef STM32F0
   rcc_periph_clock_enable(RCC_DMA);
-  uint32_t rcc_apb2_frequency = rcc_apb1_frequency; /* STM32F0x2 only has one APB. */
 #else
   rcc_periph_clock_enable(RCC_DMA1);
 #endif /* STM32F0 */
