@@ -20,10 +20,15 @@
 #define BOARD_PIN_LED                GPIO13
 #define BOARD_LED_HIGH_IS_BUSY       true
 
+/*
+ * Pull USB D+ low on startup, to re-enumerate.
+ * Bluepill board lacks dedicated pin for handling this pull-up.
+ * https://stm32world.com/wiki/STM32_USB_Device_Renumeration
+ */
 #define BOARD_RCC_USB_PULLUP         RCC_GPIOA
 #define BOARD_PORT_USB_PULLUP        GPIOA
 #define BOARD_PIN_USB_PULLUP         GPIO12
-#define BOARD_USB_HIGH_IS_PULLUP     true
+#define BOARD_USB_HIGH_IS_PULLUP     false
 
 /* Currently you can only use SPI1, since it has highest clock. */
 
