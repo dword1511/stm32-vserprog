@@ -18,6 +18,7 @@
 #define STR_MAN    0x01
 #define STR_PROD   0x02
 #define STR_SER    0x03
+#define STR_IFACE  0x04
 
 #include "usbcdc.h"
 
@@ -111,7 +112,7 @@ static const struct usb_interface_descriptor comm_iface[] = {{
   .bInterfaceClass      = USB_CLASS_CDC,
   .bInterfaceSubClass   = USB_CDC_SUBCLASS_ACM,
   .bInterfaceProtocol   = USB_CDC_PROTOCOL_AT,
-  .iInterface           = 0,
+  .iInterface           = STR_IFACE,
 
   .endpoint             = comm_endp,
 
@@ -128,7 +129,7 @@ static const struct usb_interface_descriptor data_iface[] = {{
   .bInterfaceClass      = USB_CLASS_DATA,
   .bInterfaceSubClass   = 0,
   .bInterfaceProtocol   = 0,
-  .iInterface           = 0,
+  .iInterface           = STR_IFACE,
 
   .endpoint             = data_endp,
 }};
@@ -218,15 +219,17 @@ static const char *usb_strings[] = {
   "dword1511.info",
   "STM32 virtual serprog for flashrom",
   serial,
+  "serprog",
 };
+#define N_USB_STRS sizeof(usb_strings)/sizeof(usb_strings[0])
 
 void usbcdc_init(void) {
   desig_get_unique_id_as_string(serial, UID_LEN);
 
 #ifdef STM32F0
-  usbd_dev = usbd_init(&st_usbfs_v2_usb_driver, &dev, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
+  usbd_dev = usbd_init(&st_usbfs_v2_usb_driver, &dev, &config, usb_strings, N_USB_STRS, usbd_control_buffer, sizeof(usbd_control_buffer));
 #else
-  usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
+  usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev, &config, usb_strings, N_USB_STRS, usbd_control_buffer, sizeof(usbd_control_buffer));
 #endif /* STM32F0 */
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
   usbd_register_reset_callback(usbd_dev, cdcacm_reset);
